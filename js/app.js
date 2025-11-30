@@ -37,6 +37,17 @@ const router = {
             }
         });
 
+        // Update Mobile Navigation
+        document.querySelectorAll('.mobile-nav-item').forEach(el => {
+            el.classList.remove('active', 'text-zenox-primary', 'dark:text-white');
+            el.classList.add('text-gray-400', 'dark:text-gray-500');
+
+            if (el.dataset.target === hash) {
+                el.classList.add('active', 'text-zenox-primary', 'dark:text-white');
+                el.classList.remove('text-gray-400', 'dark:text-gray-500');
+            }
+        });
+
         // Handle Trading Submenu State
         const tradingRoutes = ['trades', 'equity', 'analysis', 'wallet', 'strategies', 'checklist'];
         const submenu = document.getElementById('trading-submenu');
@@ -111,6 +122,24 @@ window.toggleTradingMenu = function () {
         } else {
             chevron.style.transform = 'rotate(180deg)';
         }
+    }
+};
+
+window.toggleMobileMenu = function (forceClose = null) {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    if (!sidebar || !overlay) return;
+
+    const isClosed = sidebar.classList.contains('-translate-x-full');
+    const shouldOpen = forceClose === null ? isClosed : !forceClose;
+
+    if (shouldOpen) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
     }
 };
 

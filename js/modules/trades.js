@@ -25,7 +25,7 @@ const TradesModule = {
                             <i class="fa-solid fa-dollar-sign text-white text-xl"></i>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Lucro Hoje</p>
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${stats.todayProfit.toFixed(2)}</h3>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${Store.formatCurrency(stats.todayProfit)}</h3>
                     </div>
 
                     <!-- Lucro do Mês -->
@@ -35,7 +35,7 @@ const TradesModule = {
                             <i class="fa-solid fa-chart-line text-white text-xl"></i>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Lucro do Mês</p>
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${stats.monthProfit.toFixed(2)}</h3>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${Store.formatCurrency(stats.monthProfit)}</h3>
                     </div>
 
                     <!-- Total Acumulado -->
@@ -45,7 +45,7 @@ const TradesModule = {
                             <i class="fa-solid fa-bullseye text-white text-xl"></i>
                         </div>
                         <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Total Acumulado</p>
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${stats.totalProfit.toFixed(2)}</h3>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${Store.formatCurrency(stats.totalProfit)}</h3>
                     </div>
 
                     <!-- Win Rate -->

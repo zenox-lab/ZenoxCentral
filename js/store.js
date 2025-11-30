@@ -6,12 +6,27 @@ const Store = {
         expenses: [],
         habits: [],
         notes: [],
-        strategies: []
+        strategies: [],
+        categories: {
+            income: ['Salário', 'Freelance', 'Dividendos', 'Outros'],
+            expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
+            investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto']
+        }
     },
 
     init() {
         if (localStorage.getItem(this.STORAGE_KEY)) {
             this.state = JSON.parse(localStorage.getItem(this.STORAGE_KEY));
+
+            // Migration: Add categories if missing
+            if (!this.state.categories) {
+                this.state.categories = {
+                    income: ['Salário', 'Freelance', 'Dividendos', 'Outros'],
+                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
+                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto']
+                };
+                this.save();
+            }
 
             // Auto-cleanup demo expenses (IDs 1, 2, 3) if they exist
             if (this.state.expenses && this.state.expenses.some(e => ['1', '2', '3'].includes(e.id))) {
@@ -25,7 +40,12 @@ const Store = {
                 expenses: [],
                 habits: this.getDemoHabits(),
                 notes: this.getDemoNotes(),
-                strategies: []
+                strategies: [],
+                categories: {
+                    income: ['Salário', 'Freelance', 'Dividendos', 'Outros'],
+                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
+                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto']
+                }
             };
             this.save();
         }
@@ -33,6 +53,27 @@ const Store = {
 
     save() {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
+    },
+
+    // --- Categories ---
+    getCategories(type) {
+        return this.state.categories[type] || [];
+    },
+
+    addCategory(type, name) {
+        if (this.state.categories[type] && !this.state.categories[type].includes(name)) {
+            this.state.categories[type].push(name);
+            this.save();
+            return true;
+        }
+        return false;
+    },
+
+    deleteCategory(type, name) {
+        if (this.state.categories[type]) {
+            this.state.categories[type] = this.state.categories[type].filter(c => c !== name);
+            this.save();
+        }
     },
 
     // --- Trades ---
@@ -122,6 +163,14 @@ const Store = {
             { id: '1', title: 'Ideias de Projeto', content: 'Criar um dashboard unificado para trades e finanças.', tags: ['Dev', 'Ideia'], updatedAt: '2025-11-29T10:00:00Z' },
             { id: '2', title: 'Lista de Compras', content: '- Café\n- Leite\n- Pão integral', tags: ['Pessoal'], updatedAt: '2025-11-28T18:30:00Z' },
         ];
+    },
+
+    // --- Helpers ---
+    formatCurrency(value) {
+        return new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
     }
 };
 

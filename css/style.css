@@ -34,8 +34,15 @@
 
 /* Animations */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .animate-fade-in {
@@ -43,9 +50,14 @@
 }
 
 .nav-item.active {
+    background: #f4f4f5;
+    color: #18181b;
+    border-right: 3px solid #06b6d4;
+}
+
+.dark .nav-item.active {
     background: rgba(255, 255, 255, 0.05);
     color: white;
-    border-right: 3px solid #06b6d4;
 }
 
 /* Input Styles */
@@ -82,4 +94,36 @@
 
 .zenox-table tr:hover td {
     background: rgba(255, 255, 255, 0.02);
+}
+
+/* Mobile Navigation Animation */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Mobile Nav Active State */
+.mobile-nav-item.active {
+    color: #06b6d4;
+    /* zenox-primary */
+}
+
+.dark .mobile-nav-item.active {
+    color: white;
+}
+
+.mobile-nav-item.active i {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
 }

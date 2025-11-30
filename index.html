@@ -62,11 +62,15 @@
 </head>
 
 <body
-    class="bg-gray-100 dark:bg-zenox-bg text-gray-800 dark:text-gray-200 font-sans antialiased overflow-hidden h-screen flex transition-colors duration-300">
+    class="bg-zinc-50 dark:bg-zenox-bg text-zinc-900 dark:text-gray-200 font-sans antialiased overflow-hidden h-screen flex transition-colors duration-300">
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div id="sidebar-overlay" onclick="toggleMobileMenu()"
+        class="fixed inset-0 bg-black/50 z-30 hidden md:hidden glass"></div>
 
     <!-- Sidebar -->
-    <aside
-        class="w-64 bg-white dark:bg-zenox-surface border-r border-gray-200 dark:border-white/5 flex flex-col transition-all duration-300 z-20 hidden md:flex">
+    <aside id="sidebar"
+        class="fixed md:static inset-y-0 left-0 w-72 bg-white dark:bg-zenox-surface border-r border-gray-200 dark:border-white/5 flex flex-col transition-transform duration-300 z-40 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
 
         <!-- Logo -->
         <div class="h-20 flex items-center px-8 border-b border-gray-200 dark:border-white/5">
@@ -81,7 +85,7 @@
 
         <!-- Navigation -->
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            <button onclick="router.navigate('dashboard')"
+            <button onclick="router.navigate('dashboard'); toggleMobileMenu(false)"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group active"
                 data-target="dashboard">
                 <i class="fa-solid fa-grid-2 text-lg group-hover:text-zenox-primary transition-colors"></i>
@@ -103,37 +107,37 @@
 
                 <!-- Submenu -->
                 <div id="trading-submenu" class="hidden pl-4 space-y-1">
-                    <button onclick="router.navigate('trades')" data-target="trades"
+                    <button onclick="router.navigate('trades'); toggleMobileMenu(false)" data-target="trades"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all">
                         <i class="fa-regular fa-calendar text-base"></i>
                         <span>Diário</span>
                     </button>
 
-                    <button onclick="router.navigate('equity')" data-target="equity"
+                    <button onclick="router.navigate('equity'); toggleMobileMenu(false)" data-target="equity"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all">
                         <i class="fa-solid fa-arrow-trend-up text-base"></i>
                         <span>Patrimônio</span>
                     </button>
 
-                    <button onclick="router.navigate('analysis')" data-target="analysis"
+                    <button onclick="router.navigate('analysis'); toggleMobileMenu(false)" data-target="analysis"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-purple-500 dark:hover:text-purple-400 transition-all">
                         <i class="fa-solid fa-chart-pie text-base"></i>
                         <span>Análise</span>
                     </button>
 
-                    <button onclick="router.navigate('wallet')" data-target="wallet"
+                    <button onclick="router.navigate('wallet'); toggleMobileMenu(false)" data-target="wallet"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-orange-500 dark:hover:text-orange-400 transition-all">
                         <i class="fa-solid fa-briefcase text-base"></i>
                         <span>Carteira</span>
                     </button>
 
-                    <button onclick="router.navigate('strategies')" data-target="strategies"
+                    <button onclick="router.navigate('strategies'); toggleMobileMenu(false)" data-target="strategies"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-accent dark:hover:text-white transition-all">
                         <i class="fa-solid fa-bullseye text-base"></i>
                         <span>Estratégias</span>
                     </button>
 
-                    <button onclick="router.navigate('checklist')" data-target="checklist"
+                    <button onclick="router.navigate('checklist'); toggleMobileMenu(false)" data-target="checklist"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-pink-500 dark:hover:text-pink-400 transition-all">
                         <i class="fa-solid fa-list-check text-base"></i>
                         <span>Checklist</span>
@@ -141,21 +145,21 @@
                 </div>
             </div>
 
-            <button onclick="router.navigate('expenses')"
+            <button onclick="router.navigate('expenses'); toggleMobileMenu(false)"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-warning dark:hover:text-white transition-all group"
                 data-target="expenses">
                 <i class="fa-solid fa-wallet text-lg group-hover:text-zenox-warning transition-colors"></i>
                 <span class="font-medium">Financeiro</span>
             </button>
 
-            <button onclick="router.navigate('habits')"
+            <button onclick="router.navigate('habits'); toggleMobileMenu(false)"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-success dark:hover:text-white transition-all group"
                 data-target="habits">
                 <i class="fa-solid fa-check-double text-lg group-hover:text-zenox-success transition-colors"></i>
                 <span class="font-medium">Hábitos</span>
             </button>
 
-            <button onclick="router.navigate('notes')"
+            <button onclick="router.navigate('notes'); toggleMobileMenu(false)"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-secondary dark:hover:text-white transition-all group"
                 data-target="notes">
                 <i class="fa-solid fa-note-sticky text-lg group-hover:text-zenox-secondary transition-colors"></i>
@@ -199,7 +203,7 @@
     <main class="flex-1 flex flex-col relative overflow-hidden">
         <!-- Mobile Header -->
         <header
-            class="md:hidden h-16 bg-white dark:bg-zenox-surface border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20">
+            class="md:hidden h-16 bg-white dark:bg-zenox-surface border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-4 z-20 shadow-sm">
             <div class="flex items-center gap-2">
                 <div
                     class="w-6 h-6 rounded bg-gradient-to-br from-zenox-primary to-zenox-secondary flex items-center justify-center">
@@ -207,14 +211,15 @@
                 </div>
                 <span class="font-bold text-gray-900 dark:text-white">ZENOX</span>
             </div>
-            <button class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+            <button onclick="toggleMobileMenu()"
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2">
                 <i class="fa-solid fa-bars text-xl"></i>
             </button>
         </header>
 
         <!-- Dynamic View Container -->
         <div id="app-container"
-            class="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-thin scrollbar-thumb-zenox-surfaceHighlight scrollbar-track-transparent">
+            class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 scrollbar-thin scrollbar-thumb-zenox-surfaceHighlight scrollbar-track-transparent">
             <!-- Content will be injected here by JS -->
         </div>
 
@@ -228,6 +233,35 @@
             </div>
         </div>
     </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav id="mobile-bottom-nav"
+        class="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-white/80 dark:bg-zenox-surface/80 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl z-50 flex items-center justify-around px-2 animate-slide-up">
+        <button onclick="router.navigate('dashboard')" data-target="dashboard"
+            class="mobile-nav-item flex flex-col items-center justify-center gap-1 w-12 h-12 rounded-xl text-gray-400 dark:text-gray-500 hover:text-zenox-primary dark:hover:text-white transition-all">
+            <i class="fa-solid fa-grid-2 text-xl"></i>
+        </button>
+
+        <button onclick="router.navigate('trades')" data-target="trades"
+            class="mobile-nav-item flex flex-col items-center justify-center gap-1 w-12 h-12 rounded-xl text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-white transition-all">
+            <i class="fa-solid fa-chart-candlestick text-xl"></i>
+        </button>
+
+        <button onclick="router.navigate('expenses')" data-target="expenses"
+            class="mobile-nav-item flex flex-col items-center justify-center gap-1 w-14 h-14 -mt-8 bg-zenox-primary text-white rounded-full shadow-lg shadow-zenox-primary/40 hover:scale-105 transition-all border-4 border-zinc-50 dark:border-zenox-bg">
+            <i class="fa-solid fa-wallet text-xl"></i>
+        </button>
+
+        <button onclick="router.navigate('habits')" data-target="habits"
+            class="mobile-nav-item flex flex-col items-center justify-center gap-1 w-12 h-12 rounded-xl text-gray-400 dark:text-gray-500 hover:text-zenox-success dark:hover:text-white transition-all">
+            <i class="fa-solid fa-check-double text-xl"></i>
+        </button>
+
+        <button onclick="router.navigate('notes')" data-target="notes"
+            class="mobile-nav-item flex flex-col items-center justify-center gap-1 w-12 h-12 rounded-xl text-gray-400 dark:text-gray-500 hover:text-zenox-secondary dark:hover:text-white transition-all">
+            <i class="fa-solid fa-note-sticky text-xl"></i>
+        </button>
+    </nav>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

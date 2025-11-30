@@ -115,7 +115,7 @@ const AnalysisModule = {
     },
 
     formatCurrency(value) {
-        return parseFloat(value).toFixed(2);
+        return Store.formatCurrency(value);
     },
 
     renderChart() {
@@ -161,7 +161,7 @@ const AnalysisModule = {
                     },
                     tooltip: {
                         callbacks: {
-                            label: (context) => ` $${context.raw.toFixed(2)}`
+                            label: (context) => ` R$ ${Store.formatCurrency(context.raw)}`
                         }
                     }
                 },
