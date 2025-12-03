@@ -156,6 +156,11 @@ window.Store = {
         }
     },
 
+
+    getCategories(type) {
+        return this.state.categories[type] || [];
+    },
+
     addCategory(type, name) {
         if (this.state.categories[type] && !this.state.categories[type].includes(name)) {
             this.state.categories[type].push(name);
