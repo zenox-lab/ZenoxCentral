@@ -164,6 +164,55 @@ window.HabitsModule = {
                         </div>
                     </div>
                 </div>
+                    </div>
+                </div>
+
+                <!-- Wellness Monitor Section -->
+                <div class="bg-white dark:bg-zenox-surface p-6 rounded-xl shadow-card border border-gray-100 dark:border-white/5">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800 dark:text-white">Monitor de Bem-Estar</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Acompanhe seu Humor, Stress e Sono</p>
+                        </div>
+                        
+                        <!-- Input Controls for Today -->
+                        <div class="flex flex-wrap gap-4 items-end bg-gray-50 dark:bg-white/5 p-4 rounded-xl border border-gray-100 dark:border-white/5">
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                    <i class="fa-regular fa-face-smile text-purple-500"></i> Humor (0-10)
+                                </label>
+                                <input type="range" min="0" max="10" step="1" id="input-mood" 
+                                    onchange="HabitsModule.saveWellnessMetric('mood', this.value)"
+                                    class="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-500">
+                                <div class="text-center text-xs font-bold text-purple-600 dark:text-purple-400" id="val-mood">-</div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-bolt text-rose-500"></i> Stress (0-10)
+                                </label>
+                                <input type="range" min="0" max="10" step="1" id="input-stress" 
+                                    onchange="HabitsModule.saveWellnessMetric('stress', this.value)"
+                                    class="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-rose-500">
+                                <div class="text-center text-xs font-bold text-rose-600 dark:text-rose-400" id="val-stress">-</div>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-bed text-blue-500"></i> Sono (Horas)
+                                </label>
+                                <input type="range" min="0" max="12" step="0.5" id="input-sleep" 
+                                    onchange="HabitsModule.saveWellnessMetric('sleep', this.value)"
+                                    class="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-blue-500">
+                                <div class="text-center text-xs font-bold text-blue-600 dark:text-blue-400" id="val-sleep">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-64 w-full relative">
+                        <canvas id="wellnessChart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <!-- Modal -->
@@ -193,6 +242,132 @@ window.HabitsModule = {
 
     afterRender() {
         this.renderChart();
+        this.renderWellnessChart();
+        this.initWellnessInputs();
+    },
+
+    initWellnessInputs() {
+        const today = new Date().toISOString().slice(0, 10);
+        const metrics = Store.getDailyMetrics()[today] || {};
+
+        const setVal = (type, val) => {
+            const el = document.getElementById(`input-${type}`);
+            const display = document.getElementById(`val-${type}`);
+            if (el && display) {
+                el.value = val !== undefined ? val : 5; // Default 5
+                display.innerText = val !== undefined ? val : '-';
+            }
+        };
+
+        setVal('mood', metrics.mood);
+        setVal('stress', metrics.stress);
+        setVal('sleep', metrics.sleep);
+    },
+
+    saveWellnessMetric(type, value) {
+        const today = new Date().toISOString().slice(0, 10);
+        Store.saveDailyMetric(today, type, value);
+        document.getElementById(`val-${type}`).innerText = value;
+        this.renderWellnessChart(); // Update chart immediately
+    },
+
+    renderWellnessChart() {
+        const ctx = document.getElementById('wellnessChart');
+        if (!ctx) return;
+
+        // Destroy existing if any
+        if (Chart.getChart(ctx)) Chart.getChart(ctx).destroy();
+
+        // Get last 30 days
+        const labels = [];
+        const dataMood = [];
+        const dataStress = [];
+        const dataSleep = [];
+
+        const metrics = Store.getDailyMetrics();
+        const today = new Date();
+
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(today.getDate() - i);
+            const dateStr = d.toISOString().slice(0, 10);
+
+            labels.push(d.getDate()); // Just the day number
+
+            const dayMetrics = metrics[dateStr] || {};
+            dataMood.push(dayMetrics.mood !== undefined ? dayMetrics.mood : null);
+            dataStress.push(dayMetrics.stress !== undefined ? dayMetrics.stress : null);
+            dataSleep.push(dayMetrics.sleep !== undefined ? dayMetrics.sleep : null);
+        }
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Sono (h)',
+                        data: dataSleep,
+                        borderColor: '#3b82f6', // Blue
+                        backgroundColor: '#3b82f6',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        borderDash: [] // Solid Line
+                    },
+                    {
+                        label: 'Stress',
+                        data: dataStress,
+                        borderColor: '#f43f5e', // Rose
+                        backgroundColor: '#f43f5e',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        borderDash: [5, 5] // Dashed Line
+                    },
+                    {
+                        label: 'Humor',
+                        data: dataMood,
+                        borderColor: '#a855f7', // Purple
+                        backgroundColor: '#a855f7',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        borderDash: [1, 3] // Dotted Line
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { usePointStyle: true, boxWidth: 8 }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 12, // Max for sleep usually, mood/stress is 10
+                        grid: { color: 'rgba(128, 128, 128, 0.1)' },
+                        ticks: { stepSize: 1, color: '#9ca3af' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#9ca3af', maxTicksLimit: 15 }
+                    }
+                }
+            }
+        });
     },
 
     getWeekDays(offset = 0) {

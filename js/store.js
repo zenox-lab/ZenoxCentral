@@ -405,6 +405,22 @@ window.Store = {
         }
     },
 
+    // --- Daily Wellness Metrics ---
+    getDailyMetrics() {
+        return this.state.dailyMetrics || {};
+    },
+
+    saveDailyMetric(date, type, value) {
+        if (!this.state.dailyMetrics) {
+            this.state.dailyMetrics = {};
+        }
+        if (!this.state.dailyMetrics[date]) {
+            this.state.dailyMetrics[date] = {};
+        }
+        this.state.dailyMetrics[date][type] = parseFloat(value);
+        this.save();
+    },
+
     // --- Notes ---
     addNote(note) {
         note.id = Date.now().toString();
