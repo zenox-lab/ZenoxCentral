@@ -1,13 +1,15 @@
-const router = {
+window.router = {
     routes: {
-        'dashboard': DashboardModule,
-        'trades': TradesModule,
-        'equity': EquityModule,
-        'analysis': AnalysisModule,
-        'strategies': StrategiesModule,
-        'expenses': ExpensesModule,
-        'habits': HabitsModule,
-        'notes': NotesModule
+        'dashboard': window.DashboardModule,
+        'trades': window.TradesModule,
+        'equity': window.EquityModule,
+        'analysis': window.AnalysisModule,
+        'wallet': window.WalletModule,
+        'strategies': window.StrategiesModule,
+        'checklist': window.ChecklistModule,
+        'expenses': window.ExpensesModule,
+        'habits': window.HabitsModule,
+        'notes': window.NotesModule
     },
 
     init() {
@@ -91,7 +93,7 @@ ${error.stack || error.message}
             }
         } else {
             // Placeholder for new routes
-            if (['equity', 'analysis', 'wallet', 'checklist'].includes(hash)) {
+            if (['equity'].includes(hash)) {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-center space-y-4 animate-fade-in">
                         <div class="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center">
@@ -155,6 +157,11 @@ window.toggleTheme = function () {
 };
 
 // Initialize App
+// Initialize App
 document.addEventListener('DOMContentLoaded', () => {
-    router.init();
+    if (window.router) {
+        window.router.init();
+    } else {
+        console.error('Router not initialized!');
+    }
 });

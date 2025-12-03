@@ -1,4 +1,4 @@
-const Store = {
+window.Store = {
     STORAGE_KEY: 'zenox_data',
     state: {
         theme: 'dark',
@@ -7,10 +7,17 @@ const Store = {
         habits: [],
         notes: [],
         strategies: [],
+        checklists: [],
         categories: {
-            income: ['Salário', 'Freelance', 'Dividendos', 'Outros'],
-            expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
-            investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto']
+            income: ['Salário', 'Freelance', 'Dividendos', 'Presente', 'Outros'],
+            expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Serviços', 'Dívidas', 'Outros'],
+            investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros']
+        },
+        assets: ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'],
+        expenseTypes: ['Fixa', 'Variável', 'Extra', 'Adicional'],
+        banks: {
+            nubank: { balance: 0, invested: 0 },
+            mercadoPago: { balance: 0, invested: 0 }
         }
     },
 
@@ -21,10 +28,49 @@ const Store = {
             // Migration: Add categories if missing
             if (!this.state.categories) {
                 this.state.categories = {
-                    income: ['Salário', 'Freelance', 'Dividendos', 'Outros'],
-                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
-                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto']
+                    income: ['Salário', 'Freelance', 'Dividendos', 'Presente', 'Outros'],
+                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Serviços', 'Dívidas', 'Outros'],
+                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros']
                 };
+                this.save();
+            }
+
+            // Migration: Add expenseTypes if missing
+            if (!this.state.expenseTypes) {
+                this.state.expenseTypes = ['Fixa', 'Variável', 'Extra', 'Adicional'];
+                this.save();
+            }
+
+            // Migration: Add strategies if missing
+            if (!this.state.strategies) {
+                this.state.strategies = [];
+                this.save();
+            }
+
+            // Migration: Add checklists if missing
+            if (!this.state.checklists) {
+                this.state.checklists = [];
+                this.save();
+            }
+
+            // Migration: Add banks if missing
+            if (!this.state.banks) {
+                this.state.banks = {
+                    nubank: { balance: 0, invested: 0 },
+                    mercadoPago: { balance: 0, invested: 0 }
+                };
+                this.save();
+            }
+
+            // Migration: Add assets if missing
+            if (!this.state.assets) {
+                this.state.assets = ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'];
+                this.save();
+            }
+
+            // Migration: Add timeframes if missing
+            if (!this.state.timeframes) {
+                this.state.timeframes = ['1m', '5m', '15m', '1h', '4h', '1D'];
                 this.save();
             }
 
@@ -42,9 +88,16 @@ const Store = {
                 notes: this.getDemoNotes(),
                 strategies: [],
                 categories: {
-                    income: ['Salário', 'Freelance', 'Dividendos', 'Outros'],
-                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros'],
-                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto']
+                    income: ['Salário', 'Freelance', 'Dividendos', 'Presente', 'Outros'],
+                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Serviços', 'Dívidas', 'Outros'],
+                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros']
+                },
+                expenseTypes: ['Fixa', 'Variável', 'Extra', 'Adicional'],
+                assets: ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'],
+                timeframes: ['1m', '5m', '15m', '1h', '4h', '1D'],
+                banks: {
+                    nubank: { balance: 0, invested: 0 },
+                    mercadoPago: { balance: 0, invested: 0 }
                 }
             };
             this.save();
@@ -76,6 +129,110 @@ const Store = {
         }
     },
 
+    // --- Assets ---
+    getAssets() {
+        return this.state.assets || [];
+    },
+
+    addAsset(asset) {
+        if (this.state.assets && !this.state.assets.includes(asset)) {
+            this.state.assets.push(asset);
+            this.save();
+            return true;
+        }
+        return false;
+    },
+
+    deleteAsset(asset) {
+        if (this.state.assets) {
+            this.state.assets = this.state.assets.filter(a => a !== asset);
+            this.save();
+        }
+    },
+
+    // --- Timeframes ---
+    getTimeframes() {
+        return this.state.timeframes || [];
+    },
+
+    addTimeframe(tf) {
+        if (this.state.timeframes && !this.state.timeframes.includes(tf)) {
+            this.state.timeframes.push(tf);
+            this.save();
+            return true;
+        }
+        return false;
+    },
+
+    deleteTimeframe(tf) {
+        if (this.state.timeframes) {
+            this.state.timeframes = this.state.timeframes.filter(t => t !== tf);
+            this.save();
+        }
+    },
+
+    // --- Expense Types ---
+    getExpenseTypes() {
+        return this.state.expenseTypes || [];
+    },
+
+    addExpenseType(name) {
+        if (this.state.expenseTypes && !this.state.expenseTypes.includes(name)) {
+            this.state.expenseTypes.push(name);
+            this.save();
+            return true;
+        }
+        return false;
+    },
+
+    deleteExpenseType(name) {
+        if (this.state.expenseTypes) {
+            this.state.expenseTypes = this.state.expenseTypes.filter(t => t !== name);
+            this.save();
+        }
+    },
+
+    // --- Banks ---
+    getBanks() {
+        const defaults = {
+            nubank: { balance: 0, invested: 0 },
+            mercadoPago: { balance: 0, invested: 0 },
+            other: { balance: 0, invested: 0 }
+        };
+
+        if (!this.state.banks) {
+            return defaults;
+        }
+
+        // Ensure 'other' exists if banks already exists
+        if (!this.state.banks.other) {
+            this.state.banks.other = { balance: 0, invested: 0 };
+            this.save();
+        }
+
+        return this.state.banks;
+    },
+
+    setBankData(bankId, data) {
+        if (this.state.banks && this.state.banks[bankId]) {
+            this.state.banks[bankId] = { ...this.state.banks[bankId], ...data };
+            this.save();
+            return true;
+        }
+        return false;
+    },
+
+    updateBankBalance(bankId, amount, type = 'balance') {
+        if (this.state.banks && this.state.banks[bankId]) {
+            // amount can be negative
+            const current = parseFloat(this.state.banks[bankId][type] || 0);
+            this.state.banks[bankId][type] = current + parseFloat(amount);
+            this.save();
+            return true;
+        }
+        return false;
+    },
+
     // --- Trades ---
     getTrades() { return this.state.trades || []; },
     addTrade(trade) {
@@ -87,8 +244,29 @@ const Store = {
 
     // --- Expenses ---
     addExpense(expense) {
-        expense.id = Date.now().toString();
-        this.state.expenses.unshift(expense);
+        if (expense.paymentMode === 'parcelado' && expense.installments > 1) {
+            const installments = parseInt(expense.installments);
+            const baseDate = new Date(expense.date);
+            const baseDescription = expense.description;
+
+            for (let i = 0; i < installments; i++) {
+                const newExpense = { ...expense };
+                newExpense.id = Date.now().toString() + '-' + i; // Unique ID for each installment
+
+                // Calculate date for this installment
+                const date = new Date(baseDate);
+                date.setMonth(date.getMonth() + i);
+                newExpense.date = date.toISOString().split('T')[0];
+
+                // Update description
+                newExpense.description = `${baseDescription} (${i + 1}/${installments})`;
+
+                this.state.expenses.unshift(newExpense);
+            }
+        } else {
+            expense.id = Date.now().toString();
+            this.state.expenses.unshift(expense);
+        }
         this.save();
         return expense;
     },
@@ -132,21 +310,76 @@ const Store = {
 
     // --- Strategies ---
     addStrategy(strategy) {
-        strategy.id = Date.now().toString();
-        strategy.stats = { ops: 0, winRate: 0, profit: 0 }; // Init stats
+        if (!strategy.id) {
+            strategy.id = Date.now().toString();
+        }
+        // Initialize stats if not present
+        if (!strategy.stats) {
+            strategy.stats = { winRate: 0, profit: 0, ops: 0 };
+        }
         this.state.strategies.push(strategy);
         this.save();
         return strategy;
     },
     getStrategies() { return this.state.strategies || []; },
+    deleteStrategy(id) {
+        this.state.strategies = this.state.strategies.filter(s => s.id !== id);
+        this.save();
+    },
+
+    // --- Checklists ---
+    getChecklists() {
+        return this.state.checklists || [];
+    },
+
+    addChecklist(checklist) {
+        if (!checklist.id) {
+            checklist.id = Date.now().toString();
+        }
+        this.state.checklists.push(checklist);
+        this.save();
+    },
+
+    deleteChecklist(id) {
+        this.state.checklists = this.state.checklists.filter(c => c.id !== id);
+        this.save();
+    },
+
+    toggleChecklistStep(checklistId, stepIndex) {
+        const checklist = this.state.checklists.find(c => c.id === checklistId);
+        if (checklist && checklist.steps && checklist.steps[stepIndex]) {
+            checklist.steps[stepIndex].completed = !checklist.steps[stepIndex].completed;
+            this.save();
+        }
+    },
 
     // --- Notes ---
     addNote(note) {
         note.id = Date.now().toString();
         note.updatedAt = new Date().toISOString();
+        if (!note.color) note.color = 'default'; // Default color
+        if (note.isPinned === undefined) note.isPinned = false;
+
+        // New fields for Checklist/Task
+        if (!note.type) note.type = 'text'; // 'text' or 'checklist'
+        if (!note.items) note.items = []; // Array of {id, text, completed}
+        if (!note.status) note.status = 'todo'; // 'todo', 'in_progress', 'done'
+        if (!note.dueDate) note.dueDate = null;
+
         this.state.notes.unshift(note);
         this.save();
         return note;
+    },
+    updateNote(updatedNote) {
+        const index = this.state.notes.findIndex(n => n.id === updatedNote.id);
+        if (index !== -1) {
+            this.state.notes[index] = { ...this.state.notes[index], ...updatedNote, updatedAt: new Date().toISOString() };
+            this.save();
+        }
+    },
+    deleteNote(id) {
+        this.state.notes = this.state.notes.filter(n => n.id !== id);
+        this.save();
     },
     getNotes() { return this.state.notes || []; },
 
@@ -168,9 +401,16 @@ const Store = {
     // --- Helpers ---
     formatCurrency(value) {
         return new Intl.NumberFormat('pt-BR', {
+            style: 'decimal',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }).format(value);
+    },
+
+    formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('pt-BR').format(date);
     }
 };
 

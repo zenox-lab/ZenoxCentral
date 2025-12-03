@@ -1,4 +1,4 @@
-const DashboardModule = {
+window.DashboardModule = {
     render() {
         const trades = Store.getTrades();
         const expenses = Store.getExpenses();
@@ -8,11 +8,17 @@ const DashboardModule = {
         const tradeBalance = trades.reduce((acc, t) => acc + parseFloat(t.result), 0);
         const winRate = totalTrades > 0 ? ((trades.filter(t => t.result > 0).length / totalTrades) * 100).toFixed(1) : 0;
 
-        // Calculate Finance Stats
+        // Calculate Today and Month Stats
+        const today = new Date().toISOString().split('T')[0];
         const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-        const monthlyExpenses = expenses
-            .filter(e => e.date.startsWith(currentMonth) && e.type === 'expense')
-            .reduce((acc, e) => acc + parseFloat(e.amount), 0);
+
+        const todayProfit = trades
+            .filter(t => t.date === today)
+            .reduce((acc, t) => acc + parseFloat(t.result), 0);
+
+        const monthProfit = trades
+            .filter(t => t.date.startsWith(currentMonth))
+            .reduce((acc, t) => acc + parseFloat(t.result), 0);
 
         return `
             <div class="animate-fade-in space-y-8">
@@ -26,35 +32,35 @@ const DashboardModule = {
                     <!-- Trade Balance -->
                     <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden group">
                         <div class="absolute top-4 right-4 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-chart-line text-3xl"></i>
+                            <i class="fa-solid fa-chart-line text-2xl"></i>
                         </div>
-                        <p class="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-1 uppercase tracking-wider">Resultado (Trades)</p>
-                        <h3 class="text-3xl font-bold mt-2 ${tradeBalance >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-400'}">
-                            R$ ${Store.formatCurrency(tradeBalance)}
+                        <p class="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1 uppercase tracking-wider">Resultado Total</p>
+                        <h3 class="text-2xl font-bold mt-2 ${tradeBalance >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-400'}">
+                            $ ${Store.formatCurrency(tradeBalance)}
                         </h3>
                         <p class="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-2">Win Rate: <span class="font-bold">${winRate}%</span></p>
                     </div>
 
-                    <!-- Monthly Expenses -->
-                    <div class="bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-500/20 rounded-2xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-4 right-4 text-rose-500 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-wallet text-3xl"></i>
-                        </div>
-                        <p class="text-sm font-medium text-rose-600 dark:text-rose-400 mb-1 uppercase tracking-wider">Despesas (Mês)</p>
-                        <h3 class="text-3xl font-bold mt-2 text-rose-700 dark:text-rose-300">
-                            R$ ${Store.formatCurrency(monthlyExpenses)}
-                        </h3>
-                        <p class="text-xs text-rose-600/70 dark:text-rose-400/70 mt-2">Total de ${expenses.length} registros</p>
-                    </div>
-
-                    <!-- Habits Streak (Mock) -->
+                    <!-- Profit Today -->
                     <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl p-6 relative overflow-hidden group">
                         <div class="absolute top-4 right-4 text-blue-500 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-fire text-3xl"></i>
+                            <i class="fa-solid fa-dollar-sign text-2xl"></i>
                         </div>
-                        <p class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wider">Hábitos (Streak)</p>
-                        <h3 class="text-3xl font-bold mt-2 text-blue-700 dark:text-blue-300">5 Dias</h3>
-                        <p class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-2">Melhor sequência: 12 dias</p>
+                        <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wider">Lucro Hoje</p>
+                        <h3 class="text-2xl font-bold mt-2 ${todayProfit >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-rose-600 dark:text-rose-400'}">
+                            $ ${Store.formatCurrency(todayProfit)}
+                        </h3>
+                    </div>
+
+                    <!-- Profit Month -->
+                    <div class="bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-500/20 rounded-2xl p-6 relative overflow-hidden group">
+                        <div class="absolute top-4 right-4 text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <i class="fa-solid fa-calendar-check text-2xl"></i>
+                        </div>
+                        <p class="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1 uppercase tracking-wider">Lucro Mês</p>
+                        <h3 class="text-2xl font-bold mt-2 ${monthProfit >= 0 ? 'text-purple-700 dark:text-purple-300' : 'text-rose-600 dark:text-rose-400'}">
+                            $ ${Store.formatCurrency(monthProfit)}
+                        </h3>
                     </div>
 
                     <!-- Quick Note -->
@@ -91,7 +97,7 @@ const DashboardModule = {
                                         </div>
                                     </div>
                                     <span class="font-mono font-bold ${trade.result >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-                                        ${trade.result >= 0 ? '+' : ''}R$ ${Store.formatCurrency(trade.result)}
+                                        ${trade.result >= 0 ? '+' : ''}$ ${Store.formatCurrency(trade.result)}
                                     </span>
                                 </div>
                             `).join('')}
@@ -99,31 +105,6 @@ const DashboardModule = {
                         </div>
                     </div>
 
-                    <!-- Recent Expenses -->
-                    <div class="bg-white dark:bg-zenox-surface rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Últimas Despesas</h3>
-                            <button onclick="router.navigate('expenses')" class="text-sm text-zenox-primary hover:text-zenox-primary/80 transition-colors">Ver todas</button>
-                        </div>
-                        <div class="space-y-4">
-                            ${expenses.slice(0, 3).map(expense => `
-                                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-                                            <i class="fa-solid fa-receipt"></i>
-                                        </div>
-                                        <div>
-                                            <p class="font-bold text-gray-800 dark:text-white">${expense.description}</p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">${expense.date} • ${expense.category}</p>
-                                        </div>
-                                    </div>
-                                    <span class="font-mono font-bold ${expense.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-800 dark:text-white'}">
-                                        ${expense.type === 'income' ? '+' : '-'}R$ ${Store.formatCurrency(expense.amount)}
-                                    </span>
-                                </div>
-                            `).join('')}
-                            ${expenses.length === 0 ? '<p class="text-gray-500 text-center py-4">Nenhum registro encontrado.</p>' : ''}
-                        </div>
                     </div>
                 </div>
             </div>

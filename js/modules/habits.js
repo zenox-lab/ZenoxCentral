@@ -1,4 +1,4 @@
-const HabitsModule = {
+window.HabitsModule = {
     render() {
         const habits = Store.getHabits();
 

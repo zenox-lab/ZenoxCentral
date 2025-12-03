@@ -1,4 +1,4 @@
-const ExpensesModule = {
+window.ExpensesModule = {
     state: {
         currentMonth: new Date().getMonth(),
         currentYear: new Date().getFullYear(),
@@ -20,23 +20,59 @@ const ExpensesModule = {
         const currentMonth = this.state.currentMonth;
         const currentYear = this.state.currentYear;
         const viewScope = this.state.viewScope;
+        const banks = Store.getBanks();
 
         let income = 0;
         let expense = 0;
         let investment = 0;
-        let accumulatedInvestment = 0;
 
+        // Accumulated Investment Logic (Rewind from Current Total)
+        // 1. Start with the CURRENT total invested (from Store)
+        let accumulatedInvestment = (banks.nubank?.invested || 0) + (banks.mercadoPago?.invested || 0) + (banks.other?.invested || 0);
+
+        // 2. Determine Cutoff Date (End of selected period)
+        let cutoffDate;
+        if (viewScope === 'year') {
+            cutoffDate = new Date(currentYear, 11, 31, 23, 59, 59, 999); // End of selected year
+        } else {
+            cutoffDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999); // End of selected month
+        }
+
+        // 3. Iterate through expenses to:
+        //    a) Calculate Flow (Income, Expense, Investment for the period)
+        //    b) Adjust Accumulated (Rewind future investments, Add past unlinked investments)
         expenses.forEach(e => {
             const d = new Date(e.date);
             const isYearMatch = d.getFullYear() === currentYear;
             const isMonthMatch = d.getMonth() === currentMonth;
             const isScopeMatch = viewScope === 'year' ? isYearMatch : (isYearMatch && isMonthMatch);
 
-            // Accumulated Investment (All time)
+            // --- Accumulated Logic ---
             if (e.type === 'investment') {
-                accumulatedInvestment += parseFloat(e.amount);
+                if (d > cutoffDate) {
+                    // Future Investment (relative to view): REVERSE its effect to get back to past state
+                    // If it's in Store.banks (has bankId), we must subtract it because Store has it included.
+                    if (e.bankId && ['nubank', 'mercadoPago', 'other'].includes(e.bankId)) {
+                        if (e.investmentOperation === 'withdrawal') {
+                            accumulatedInvestment += parseFloat(e.amount); // Reverse withdrawal
+                        } else {
+                            accumulatedInvestment -= parseFloat(e.amount); // Reverse deposit
+                        }
+                    }
+                } else {
+                    // Past/Current Investment (relative to view)
+                    // If it's NOT in Store.banks (no bankId), we must ADD it manually because Store doesn't have it.
+                    if (!e.bankId || !['nubank', 'mercadoPago', 'other'].includes(e.bankId)) {
+                        if (e.investmentOperation === 'withdrawal') {
+                            accumulatedInvestment -= parseFloat(e.amount);
+                        } else {
+                            accumulatedInvestment += parseFloat(e.amount);
+                        }
+                    }
+                }
             }
 
+            // --- Flow Logic (Stats for the period) ---
             if (isScopeMatch) {
                 if (e.type === 'income') income += parseFloat(e.amount);
                 if (e.type === 'expense') expense += parseFloat(e.amount);
@@ -107,32 +143,91 @@ const ExpensesModule = {
         return filtered.map(e => this.renderListItem(e)).join('');
     },
 
+    getCategoryStyle(category) {
+        const styles = {
+            'Alimentação': { icon: 'fa-utensils', color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+            'Supermercado': { icon: 'fa-cart-shopping', color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+            'Restaurante': { icon: 'fa-utensils', color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/20' },
+
+            'Transporte': { icon: 'fa-car', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/20' },
+            'Combustível': { icon: 'fa-gas-pump', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/20' },
+            'Uber': { icon: 'fa-taxi', color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/20' },
+
+            'Moradia': { icon: 'fa-house', color: 'text-indigo-500', bg: 'bg-indigo-100 dark:bg-indigo-900/20' },
+            'Casa': { icon: 'fa-house', color: 'text-indigo-500', bg: 'bg-indigo-100 dark:bg-indigo-900/20' },
+            'Aluguel': { icon: 'fa-key', color: 'text-indigo-500', bg: 'bg-indigo-100 dark:bg-indigo-900/20' },
+
+            'Saúde': { icon: 'fa-heart-pulse', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/20' },
+            'Farmácia': { icon: 'fa-pills', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/20' },
+            'Médico': { icon: 'fa-user-doctor', color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/20' },
+
+            'Educação': { icon: 'fa-graduation-cap', color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/20' },
+            'Faculdade': { icon: 'fa-graduation-cap', color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/20' },
+            'Curso': { icon: 'fa-book', color: 'text-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/20' },
+
+            'Lazer': { icon: 'fa-gamepad', color: 'text-pink-500', bg: 'bg-pink-100 dark:bg-pink-900/20' },
+            'Viagem': { icon: 'fa-plane', color: 'text-pink-500', bg: 'bg-pink-100 dark:bg-pink-900/20' },
+            'Cinema': { icon: 'fa-film', color: 'text-pink-500', bg: 'bg-pink-100 dark:bg-pink-900/20' },
+
+            'Compras': { icon: 'fa-bag-shopping', color: 'text-teal-500', bg: 'bg-teal-100 dark:bg-teal-900/20' },
+            'Shopping': { icon: 'fa-bag-shopping', color: 'text-teal-500', bg: 'bg-teal-100 dark:bg-teal-900/20' },
+            'Roupas': { icon: 'fa-shirt', color: 'text-teal-500', bg: 'bg-teal-100 dark:bg-teal-900/20' },
+
+            'Serviços': { icon: 'fa-bolt', color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/20' },
+            'Assinaturas': { icon: 'fa-file-signature', color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/20' },
+            'Internet': { icon: 'fa-wifi', color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/20' }
+        };
+
+        return styles[category] || { icon: 'fa-tag', color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-white/5' };
+    },
+
     renderListItem(e) {
         const isInvestment = e.type === 'investment';
         const isIncome = e.type === 'income';
 
         let icon = 'fa-tag';
         let colorClass = 'text-rose-500';
+        let bgClass = 'bg-gray-100 dark:bg-white/5';
+        let iconColorClass = 'text-gray-500 dark:text-gray-400';
         let amountSign = '-';
 
         if (isInvestment) {
             icon = 'fa-chart-line';
             colorClass = 'text-blue-500';
-            amountSign = '-';
+            bgClass = 'bg-blue-100 dark:bg-blue-900/20';
+            iconColorClass = 'text-blue-600 dark:text-blue-400';
+
+            if (e.investmentOperation === 'withdrawal') {
+                amountSign = '-';
+                colorClass = 'text-emerald-500';
+                bgClass = 'bg-emerald-100 dark:bg-emerald-900/20';
+                iconColorClass = 'text-emerald-600 dark:text-emerald-400';
+                icon = 'fa-money-bill-transfer';
+            } else {
+                amountSign = '+';
+            }
         } else if (isIncome) {
             icon = 'fa-arrow-trend-up';
             colorClass = 'text-emerald-500';
+            bgClass = 'bg-emerald-100 dark:bg-emerald-900/20';
+            iconColorClass = 'text-emerald-600 dark:text-emerald-400';
             amountSign = '+';
+        } else {
+            // Expense - Use Category Style
+            const style = this.getCategoryStyle(e.category);
+            icon = style.icon;
+            bgClass = style.bg;
+            iconColorClass = style.color.replace('text-', 'text-'); // Ensure it's a text color class
         }
 
         return `
-            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-100 dark:border-white/5 hover:border-blue-500/30 transition-all group">
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-black/20 rounded-xl border border-gray-100 dark:border-white/5 hover:border-blue-500/30 transition-all group">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-lg bg-white dark:bg-zenox-surface flex items-center justify-center text-gray-500 dark:text-gray-400 shadow-sm">
-                        <i class="fa-solid ${icon}"></i>
+                    <div class="w-10 h-10 rounded-xl ${bgClass} flex items-center justify-center ${iconColorClass} shadow-sm">
+                        <i class="fa-solid ${icon} text-lg"></i>
                     </div>
                     <div>
-                        <h4 class="font-bold text-gray-800 dark:text-white">${e.description}</h4>
+                        <h4 class="font-semibold text-sm text-gray-800 dark:text-white">${e.description}</h4>
                         <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                             <span>${new Date(e.date).toLocaleDateString('pt-BR')}</span>
                             <span>•</span>
@@ -143,7 +238,7 @@ const ExpensesModule = {
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    <span class="font-bold ${colorClass}">${amountSign} R$ ${Store.formatCurrency(e.amount)}</span>
+                    <span class="font-semibold text-sm ${colorClass}">${amountSign} R$ ${Store.formatCurrency(e.amount)}</span>
                     <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onclick="ExpensesModule.editExpense('${e.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
                             <i class="fa-solid fa-pen text-xs"></i>
@@ -186,15 +281,20 @@ const ExpensesModule = {
     render() {
         const expenses = Store.getExpenses();
         const stats = this.calculateStats(expenses);
+        const banks = Store.getBanks();
         const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
         return `
             <div class="space-y-6 animate-fade-in" onclick="ExpensesModule.handleOutsideClick(event)">
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Orçamento Pessoal</h2>
-                        <p class="text-gray-500 dark:text-gray-400">Gerencie suas finanças de forma inteligente</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:scale-105 transition-all group">
+                            <i class="fa-solid fa-shield-halved text-xl group-hover:rotate-12 transition-transform"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-3xl font-bold text-gray-800 dark:text-white tracking-tighter" style="font-family: 'Outfit', sans-serif;">Controle Financeiro</h2>
+                        </div>
                     </div>
                     
                     <!-- Controls -->
@@ -247,61 +347,162 @@ const ExpensesModule = {
                 </div>
 
                 <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <!-- Receitas -->
-                    <div onclick="ExpensesModule.setListTab('income')" class="cursor-pointer bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden hover:scale-[1.02] transition-transform">
-                        <div class="absolute top-4 right-4 text-emerald-500">
-                            <i class="fa-solid fa-arrow-trend-up text-xl"></i>
-                        </div>
-                        <p class="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-1">Receitas</p>
-                        <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-300">R$ ${Store.formatCurrency(stats.income)}</h3>
-                    </div>
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Main Content (Left Column) -->
+                    <div class="lg:col-span-3 space-y-6">
+                        <!-- Summary Cards Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Saldo em Conta -->
+                            <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-5 relative overflow-hidden hover:scale-[1.02] transition-transform">
+                                <div class="absolute top-4 right-4 text-emerald-500">
+                                    <i class="fa-solid fa-building-columns text-xl"></i>
+                                </div>
+                                <p class="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-1">Saldo em Conta</p>
+                                <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-300">R$ ${Store.formatCurrency((banks.nubank?.balance || 0) + (banks.mercadoPago?.balance || 0) + (banks.other?.balance || 0))}</h3>
+                            </div>
 
-                    <!-- Despesas -->
-                    <div onclick="ExpensesModule.setListTab('expenses')" class="cursor-pointer bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-500/20 rounded-2xl p-6 relative overflow-hidden hover:scale-[1.02] transition-transform">
-                        <div class="absolute top-4 right-4 text-rose-500">
-                            <i class="fa-solid fa-arrow-trend-down text-xl"></i>
-                        </div>
-                        <p class="text-sm font-medium text-rose-600 dark:text-rose-400 mb-1">Despesas</p>
-                        <h3 class="text-2xl font-bold text-rose-700 dark:text-rose-300">R$ ${Store.formatCurrency(stats.expense)}</h3>
-                    </div>
+                            <!-- Despesas -->
+                            <div onclick="ExpensesModule.setListTab('expenses')" class="cursor-pointer bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-500/20 rounded-2xl p-5 relative overflow-hidden hover:scale-[1.02] transition-transform">
+                                <div class="absolute top-4 right-4 text-rose-500">
+                                    <i class="fa-solid fa-arrow-trend-down text-xl"></i>
+                                </div>
+                                <p class="text-sm font-medium text-rose-600 dark:text-rose-400 mb-1">Despesas</p>
+                                <h3 class="text-xl font-bold text-rose-700 dark:text-rose-300">R$ ${Store.formatCurrency(stats.expense)}</h3>
+                            </div>
 
-                    <!-- Investimentos -->
-                    <div onclick="ExpensesModule.setListTab('investments')" class="cursor-pointer bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl p-6 relative overflow-hidden hover:scale-[1.02] transition-transform">
-                        <div class="absolute top-4 right-4 text-blue-500">
-                            <i class="fa-solid fa-piggy-bank text-xl"></i>
+                            <!-- Investimentos -->
+                            <div onclick="ExpensesModule.setListTab('investments')" class="cursor-pointer bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl p-5 relative overflow-hidden hover:scale-[1.02] transition-transform">
+                                <div class="absolute top-4 right-4 text-blue-500">
+                                    <i class="fa-solid fa-piggy-bank text-xl"></i>
+                                </div>
+                                <p class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Investimentos (${this.state.viewScope === 'year' ? 'Ano' : 'Mês'})</p>
+                                <h3 class="text-xl font-bold text-blue-700 dark:text-blue-300">R$ ${Store.formatCurrency(stats.investment)}</h3>
+                                <p class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">Acumulado: R$ ${Store.formatCurrency(stats.accumulatedInvestment)}</p>
+                            </div>
                         </div>
-                        <p class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Investimentos (${this.state.viewScope === 'year' ? 'Ano' : 'Mês'})</p>
-                        <h3 class="text-2xl font-bold text-blue-700 dark:text-blue-300">R$ ${Store.formatCurrency(stats.investment)}</h3>
-                        <p class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">Acumulado: R$ ${Store.formatCurrency(stats.accumulatedInvestment)}</p>
-                    </div>
 
-                    <!-- Saldo -->
-                    <div class="bg-white dark:bg-zenox-surface border border-gray-200 dark:border-white/10 rounded-2xl p-6 relative overflow-hidden shadow-sm">
-                        <div class="absolute top-4 right-4 text-gray-400">
-                            <i class="fa-solid fa-wallet text-xl"></i>
-                        </div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Saldo</p>
-                        <h3 class="text-2xl font-bold ${stats.balance >= 0 ? 'text-gray-800 dark:text-white' : 'text-rose-500'}">R$ ${Store.formatCurrency(stats.balance)}</h3>
-                    </div>
-                </div>
-
-                <!-- Main Chart Section -->
-                <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="font-bold text-gray-800 dark:text-white">
-                            ${this.state.chartScope === 'annual' ? `Visão Anual - ${this.state.currentYear}` :
+                        <!-- Main Chart Section -->
+                        <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-bold text-gray-800 dark:text-white">
+                                    ${this.state.chartScope === 'annual' ? `Visão Anual - ${this.state.currentYear}` :
                 this.state.chartScope === 'monthly' ? `Visão Mensal - ${this.getMonthName(this.state.currentMonth)}` :
                     'Visão Semanal'}
-                        </h3>
-                        <div class="flex bg-gray-100 dark:bg-white/5 rounded-lg p-1">
-                            <button onclick="ExpensesModule.setChartScope('annual')" class="px-3 py-1 text-xs font-medium rounded-md transition-all ${this.state.chartScope === 'annual' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">Anual</button>
-                            <button onclick="ExpensesModule.setChartScope('monthly')" class="px-3 py-1 text-xs font-medium rounded-md transition-all ${this.state.chartScope === 'monthly' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">Mensal</button>
-                            <button onclick="ExpensesModule.setChartScope('weekly')" class="px-3 py-1 text-xs font-medium rounded-md transition-all ${this.state.chartScope === 'weekly' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">Semanal</button>
+                                </h3>
+                                <div class="flex bg-gray-100 dark:bg-white/5 rounded-lg p-1">
+                                    <button onclick="ExpensesModule.setChartScope('annual')" class="px-3 py-1 text-xs font-medium rounded-md transition-all ${this.state.chartScope === 'annual' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">Anual</button>
+                                    <button onclick="ExpensesModule.setChartScope('monthly')" class="px-3 py-1 text-xs font-medium rounded-md transition-all ${this.state.chartScope === 'monthly' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">Mensal</button>
+                                    <button onclick="ExpensesModule.setChartScope('weekly')" class="px-3 py-1 text-xs font-medium rounded-md transition-all ${this.state.chartScope === 'weekly' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">Semanal</button>
+                                </div>
+                            </div>
+                            <div class="h-64 w-full relative">
+                                <canvas id="mainChart"></canvas>
+                            </div>
                         </div>
                     </div>
-                    <div class="h-64 w-full relative">
-                        <canvas id="mainChart"></canvas>
+
+                    <!-- Sidebar (Right Column) -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- Saldo -->
+                        <div class="bg-white dark:bg-zenox-surface border border-gray-200 dark:border-white/10 rounded-2xl p-5 relative overflow-hidden shadow-sm h-full">
+                            <div class="absolute top-4 right-4 text-gray-400">
+                                <i class="fa-solid fa-wallet text-xl"></i>
+                            </div>
+                            <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Saldo Total</p>
+                            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">R$ ${Store.formatCurrency(stats.balance)}</h3>
+                            
+                            <div class="space-y-3">
+                                <!-- Nubank (Roxo) -->
+                                <div class="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-100 dark:border-purple-500/20">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-sm text-gray-800 dark:text-white">Nubank</span>
+                                        </div>
+                                        <button onclick="ExpensesModule.openBankModal('nubank')" class="text-xs text-gray-500 hover:text-purple-600 dark:text-gray-400">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Saldo</p>
+                                            <p class="font-bold text-gray-800 dark:text-white">R$ ${Store.formatCurrency(banks.nubank?.balance || 0)}</p>
+                                        </div>
+                                        ${this.getDebt('nubank') > 0 ? `
+                                            <div class="text-right">
+                                                <p class="text-xs text-rose-500">Fatura</p>
+                                                <p class="font-bold text-rose-500">- R$ ${Store.formatCurrency(this.getDebt('nubank'))}</p>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    ${(banks.nubank?.invested || 0) > 0 ? `
+                                        <div class="mt-2 pt-2 border-t border-purple-200 dark:border-purple-500/20 flex justify-between">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Investido</p>
+                                            <p class="text-xs font-bold text-blue-600 dark:text-blue-400">R$ ${Store.formatCurrency(banks.nubank?.invested || 0)}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <!-- Mercado Pago (Azul) -->
+                                <div class="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-500/20">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-sm text-gray-800 dark:text-white">Mercado Pago</span>
+                                        </div>
+                                        <button onclick="ExpensesModule.openBankModal('mercadoPago')" class="text-xs text-gray-500 hover:text-blue-600 dark:text-gray-400">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Saldo</p>
+                                            <p class="font-bold text-gray-800 dark:text-white">R$ ${Store.formatCurrency(banks.mercadoPago?.balance || 0)}</p>
+                                        </div>
+                                        ${this.getDebt('mercadoPago') > 0 ? `
+                                            <div class="text-right">
+                                                <p class="text-xs text-rose-500">Fatura</p>
+                                                <p class="font-bold text-rose-500">- R$ ${Store.formatCurrency(this.getDebt('mercadoPago'))}</p>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    ${(banks.mercadoPago?.invested || 0) > 0 ? `
+                                        <div class="mt-2 pt-2 border-t border-blue-200 dark:border-blue-500/20 flex justify-between">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Investido</p>
+                                            <p class="text-xs font-bold text-blue-600 dark:text-blue-400">R$ ${Store.formatCurrency(banks.mercadoPago?.invested || 0)}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+
+                                <!-- Outros (Preto/Cinza Escuro) -->
+                                <div class="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-sm text-gray-800 dark:text-white">Outros / Carteira</span>
+                                        </div>
+                                        <button onclick="ExpensesModule.openBankModal('other')" class="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex justify-between items-end">
+                                        <div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Saldo</p>
+                                            <p class="font-bold text-gray-800 dark:text-white">R$ ${Store.formatCurrency(banks.other?.balance || 0)}</p>
+                                        </div>
+                                        ${this.getDebt('other') > 0 ? `
+                                            <div class="text-right">
+                                                <p class="text-xs text-rose-500">Dívida</p>
+                                                <p class="font-bold text-rose-500">- R$ ${Store.formatCurrency(this.getDebt('other'))}</p>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    ${(banks.other?.invested || 0) > 0 ? `
+                                        <div class="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600 flex justify-between">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Investido</p>
+                                            <p class="text-xs font-bold text-blue-600 dark:text-blue-400">R$ ${Store.formatCurrency(banks.other?.invested || 0)}</p>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -392,7 +593,6 @@ const ExpensesModule = {
                             </button>
                         </div>
                     </div>
-
                     <!-- Tabs (Only for Expenses) -->
                     ${this.state.listTab === 'expenses' ? `
                         <div class="px-6 pt-4 flex gap-1 border-b border-gray-100 dark:border-white/5 overflow-x-auto no-scrollbar">
@@ -442,6 +642,16 @@ const ExpensesModule = {
                         <input type="hidden" id="modal-type-input" name="type">
                         <input type="hidden" id="modal-id-input" name="id">
                         <input type="hidden" id="modal-payment-mode" name="paymentMode" value="unico">
+                        
+                        <!-- Payment Source (Bank) -->
+                        <div class="space-y-1">
+                            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Fonte / Destino</label>
+                            <select name="bankId" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                                <option value="nubank">Nubank</option>
+                                <option value="mercadoPago">Mercado Pago</option>
+                                <option value="other">Outros / Carteira</option>
+                            </select>
+                        </div>
 
                         <!-- Investment Operation (Aporte/Resgate) -->
                         <div id="investment-operation-field" class="hidden space-y-2 mb-4">
@@ -466,17 +676,17 @@ const ExpensesModule = {
 
                         <div class="space-y-1">
                             <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Descrição</label>
-                            <input type="text" name="description" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white placeholder-gray-400" placeholder="Ex: Supermercado">
+                            <input type="text" name="description" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white placeholder-gray-400" placeholder="Ex: Supermercado">
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-1">
                                 <label class="text-sm font-semibold text-gray-700 dark:text-gray-300" id="amount-label">Valor (R$)</label>
-                                <input type="number" name="amount" step="0.01" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white placeholder-gray-400" placeholder="0,00">
+                                <input type="number" name="amount" step="0.01" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white placeholder-gray-400" placeholder="0,00">
                             </div>
                             <div class="space-y-1" id="date-container">
                                 <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Data</label>
-                                <input type="date" name="date" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                                <input type="date" name="date" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
                             </div>
                         </div>
 
@@ -502,7 +712,7 @@ const ExpensesModule = {
                         <!-- Installments (Parcelado) -->
                         <div id="installments-container" class="hidden space-y-1 animate-fade-in">
                             <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Número de Parcelas</label>
-                            <select name="installments" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white" onchange="ExpensesModule.updateSubmitButton()">
+                            <select name="installments" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white" onchange="ExpensesModule.updateSubmitButton()">
                                 ${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}x</option>`).join('')}
                                 ${Array.from({ length: 12 }, (_, i) => `<option value="${i + 13}">${i + 13}x</option>`).join('')}
                             </select>
@@ -511,7 +721,7 @@ const ExpensesModule = {
                         <!-- Recurring Months (Recorrente) -->
                         <div id="months-container" class="hidden space-y-1 animate-fade-in">
                             <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Repetir por quantos meses?</label>
-                            <select name="recurringMonths" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                            <select name="recurringMonths" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
                                 <option value="12">12 meses (1 ano)</option>
                                 <option value="24">24 meses (2 anos)</option>
                                 <option value="indefinite">Indefinido</option>
@@ -526,7 +736,7 @@ const ExpensesModule = {
                                     <i class="fa-solid fa-gear"></i> Gerenciar
                                 </button>
                             </div>
-                            <select name="category" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                            <select name="category" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
                                 <!-- Populated by JS -->
                             </select>
                         </div>
@@ -539,7 +749,7 @@ const ExpensesModule = {
                                     <i class="fa-solid fa-gear"></i> Gerenciar
                                 </button>
                             </div>
-                            <select name="categoryType" class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                            <select name="categoryType" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
                                 <option value="Fixa">Fixa</option>
                                 <option value="Variável">Variável</option>
                                 <option value="Extra">Extra</option>
@@ -611,20 +821,8 @@ const ExpensesModule = {
                         
                         <div class="space-y-3">
                             <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Como você pagou essas despesas?</p>
-                            
-                            <div class="space-y-2">
-                                <label class="text-xs text-gray-500 dark:text-gray-400">Do Salário (R$)</label>
-                                <input type="number" id="pay-source-salary" step="0.01" class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none text-gray-800 dark:text-white" placeholder="0,00">
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-xs text-gray-500 dark:text-gray-400">De Investimentos (Resgate) (R$)</label>
-                                <input type="number" id="pay-source-investment" step="0.01" class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none text-gray-800 dark:text-white" placeholder="0,00">
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-xs text-gray-500 dark:text-gray-400">Outros (R$)</label>
-                                <input type="number" id="pay-source-other" step="0.01" class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none text-gray-800 dark:text-white" placeholder="0,00">
+                            <div id="payment-sources-container" class="space-y-3">
+                                <!-- Dynamic inputs injected by openCloseMonthModal -->
                             </div>
                         </div>
 
@@ -699,14 +897,14 @@ const ExpensesModule = {
 
         // Reset Styles
         ['unico', 'recorrente', 'parcelado'].forEach(m => {
-            const btn = document.getElementById(`btn - mode - ${m} `);
+            const btn = document.getElementById(`btn-mode-${m}`);
             if (btn) {
                 btn.className = 'payment-mode-btn flex flex-col items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 text-gray-600 dark:text-gray-400 transition-all';
             }
         });
 
         // Apply Active Style
-        const activeBtn = document.getElementById(`btn - mode - ${mode} `);
+        const activeBtn = document.getElementById(`btn-mode-${mode}`);
 
         // Reset Visibility
         if (installmentsContainer) installmentsContainer.classList.add('hidden');
@@ -800,17 +998,24 @@ const ExpensesModule = {
         // Populate Categories
         let categories = [];
         if (type === 'expense') {
-            categories = Store.getCategories();
+            categories = Store.getCategories('expense');
             title.innerText = id ? 'Editar Despesa' : 'Nova Despesa';
             if (paymentModeContainer) paymentModeContainer.classList.remove('hidden');
             if (categoryTypeField) categoryTypeField.classList.remove('hidden');
+
+            // Populate Types
+            if (categoryTypeSelect) {
+                const types = Store.getExpenseTypes();
+                categoryTypeSelect.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
+            }
+
             this.setPaymentMode('unico');
         } else if (type === 'income') {
-            categories = ['Salário', 'Freelance', 'Investimento', 'Presente', 'Outros'];
+            categories = Store.getCategories('income');
             title.innerText = id ? 'Editar Receita' : 'Nova Receita';
             if (incomeRecurringField) incomeRecurringField.classList.remove('hidden');
         } else if (type === 'investment') {
-            categories = ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros'];
+            categories = Store.getCategories('investment');
             title.innerText = id ? 'Editar Investimento' : 'Novo Investimento';
             if (investmentOperationField) investmentOperationField.classList.remove('hidden');
         }
@@ -879,8 +1084,57 @@ const ExpensesModule = {
         // Handle checkboxes
         data.isRecurring = document.getElementById('income-is-recurring')?.checked || false;
 
+        // Calculate Bank Balance Updates
+        // If editing, revert previous impact first
         if (data.id) {
-            Store.editExpense(data.id, data);
+            const oldExpense = Store.getExpenses().find(e => e.id === data.id);
+            if (oldExpense && oldExpense.bankId) {
+                const oldAmount = parseFloat(oldExpense.amount);
+                const oldBankId = oldExpense.bankId;
+
+                // Revert logic (same as delete)
+                if (oldExpense.type === 'expense') {
+                    // Expense: No balance change to revert (new logic)
+                } else if (oldExpense.type === 'income') {
+                    Store.updateBankBalance(oldBankId, -oldAmount, 'balance');
+                } else if (oldExpense.type === 'investment') {
+                    if (oldExpense.investmentOperation === 'deposit') {
+                        if (oldBankId !== 'other') Store.updateBankBalance(oldBankId, oldAmount, 'balance');
+                        Store.updateBankBalance(oldBankId, -oldAmount, 'invested');
+                    } else if (oldExpense.investmentOperation === 'withdrawal') {
+                        if (oldBankId !== 'other') Store.updateBankBalance(oldBankId, -oldAmount, 'balance');
+                        Store.updateBankBalance(oldBankId, oldAmount, 'invested');
+                    }
+                }
+            }
+        }
+
+        // Apply new impact (for both new and edited)
+        const amount = parseFloat(data.amount);
+        const bankId = data.bankId;
+
+        if (bankId) {
+            if (data.type === 'expense') {
+                // Expense: Do NOT deduct from Balance immediately.
+            } else if (data.type === 'income') {
+                Store.updateBankBalance(bankId, amount, 'balance');
+            } else if (data.type === 'investment') {
+                if (data.investmentOperation === 'deposit') {
+                    if (bankId !== 'other') {
+                        Store.updateBankBalance(bankId, -amount, 'balance');
+                    }
+                    Store.updateBankBalance(bankId, amount, 'invested');
+                } else if (data.investmentOperation === 'withdrawal') {
+                    if (bankId !== 'other') {
+                        Store.updateBankBalance(bankId, amount, 'balance');
+                    }
+                    Store.updateBankBalance(bankId, -amount, 'invested');
+                }
+            }
+        }
+
+        if (data.id) {
+            Store.updateExpense(data);
         } else {
             Store.addExpense(data);
         }
@@ -889,18 +1143,11 @@ const ExpensesModule = {
         router.handleRoute();
     },
 
-    deleteExpense(id) {
-        if (confirm('Tem certeza que deseja excluir?')) {
-            Store.deleteExpense(id);
-            router.handleRoute();
-        }
-    },
-
-    openCategoryManager(type = 'category') {
+    openCategoryManager(type) {
         this.state.isCategoryManagerOpen = true;
 
-        if (type === 'type') {
-            document.getElementById('category-manager-title').innerText = 'Gerenciar Tipos';
+        if (type === 'expenseType') {
+            document.getElementById('category-manager-title').innerText = 'Gerenciar Tipos de Despesa';
             this.state.categoryManagerType = 'expenseType';
         } else {
             document.getElementById('category-manager-title').innerText = 'Gerenciar Categorias';
@@ -936,12 +1183,17 @@ const ExpensesModule = {
         // Refresh main modal category list if open
         const type = document.getElementById('modal-type-input').value;
         if (type) {
-            // Re-populate logic could be here, or just let user reopen
-            // For simplicity, we can trigger a refresh of the select if needed
             const categorySelect = document.querySelector('select[name="category"]');
-            if (categorySelect && type === 'expense') {
-                const categories = Store.getCategories();
-                categorySelect.innerHTML = categories.map(c => `< option value = "${c}" > ${c}</option > `).join('');
+            const categoryTypeSelect = document.querySelector('select[name="categoryType"]');
+
+            if (this.state.categoryManagerType === 'expenseType' && categoryTypeSelect) {
+                const types = Store.getExpenseTypes();
+                categoryTypeSelect.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
+            } else if (categorySelect) {
+                if (['expense', 'income', 'investment'].includes(this.state.categoryManagerType)) {
+                    const categories = Store.getCategories(this.state.categoryManagerType);
+                    categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
             }
         }
     },
@@ -951,11 +1203,10 @@ const ExpensesModule = {
         if (!container) return;
 
         let items = [];
-        if (this.state.categoryManagerType === 'expense') {
-            items = Store.getCategories();
+        if (this.state.categoryManagerType === 'expenseType') {
+            items = Store.getExpenseTypes();
         } else {
-            // Placeholder for other types if implemented in Store
-            items = [];
+            items = Store.getCategories(this.state.categoryManagerType);
         }
 
         container.innerHTML = items.map(item => `
@@ -965,15 +1216,17 @@ const ExpensesModule = {
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
-    `).join('');
+        `).join('');
     },
 
     addCategory() {
         const input = document.getElementById('new-category-input');
         const value = input.value.trim();
         if (value) {
-            if (this.state.categoryManagerType === 'expense') {
-                Store.addCategory(value);
+            if (this.state.categoryManagerType === 'expenseType') {
+                Store.addExpenseType(value);
+            } else {
+                Store.addCategory(this.state.categoryManagerType, value);
             }
             input.value = '';
             this.renderCategoryList();
@@ -981,23 +1234,106 @@ const ExpensesModule = {
     },
 
     deleteCategory(item) {
-        if (confirm(`Excluir categoria "${item}" ? `)) {
-            if (this.state.categoryManagerType === 'expense') {
-                Store.deleteCategory(item);
+        if (confirm(`Excluir "${item}"?`)) {
+            if (this.state.categoryManagerType === 'expenseType') {
+                Store.deleteExpenseType(item);
+            } else {
+                Store.deleteCategory(this.state.categoryManagerType, item);
             }
             this.renderCategoryList();
         }
+    },
+
+    getDebt(bankId) {
+        const expenses = Store.getExpenses();
+        return expenses
+            .filter(e => e.bankId === bankId && e.type === 'expense' && !e.paid)
+            .reduce((acc, e) => acc + parseFloat(e.amount), 0);
     },
 
     openCloseMonthModal() {
         const modal = document.getElementById('close-month-modal');
         const content = document.getElementById('close-month-content');
         const totalEl = document.getElementById('close-month-total');
+        const sourcesContainer = document.getElementById('payment-sources-container');
 
         const expenses = Store.getExpenses();
         const stats = this.calculateStats(expenses);
+        const banks = Store.getBanks();
 
         if (totalEl) totalEl.innerText = `R$ ${Store.formatCurrency(stats.expense)} `;
+
+        // Dynamically generate inputs for each bank balance and investment
+        if (sourcesContainer) {
+            sourcesContainer.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Balances -->
+                    <div class="space-y-3">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Usar Saldo em Conta</h4>
+                        
+                        <div>
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nubank (Disp: R$ ${Store.formatCurrency(banks.nubank?.balance || 0)})</label>
+                            <input type="number" id="pay-balance-nubank" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Mercado Pago (Disp: R$ ${Store.formatCurrency(banks.mercadoPago?.balance || 0)})</label>
+                            <input type="number" id="pay-balance-mercadoPago" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Outros (Disp: R$ ${Store.formatCurrency(banks.other?.balance || 0)})</label>
+                            <input type="number" id="pay-balance-other" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                        </div>
+                    </div>
+
+                    <!-- Investments -->
+                    <div class="space-y-3">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Resgatar Investimentos</h4>
+                        
+                        <div>
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nubank (Inv: R$ ${Store.formatCurrency(banks.nubank?.invested || 0)})</label>
+                            <input type="number" id="pay-invest-nubank" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Mercado Pago (Inv: R$ ${Store.formatCurrency(banks.mercadoPago?.invested || 0)})</label>
+                            <input type="number" id="pay-invest-mercadoPago" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Outros (Inv: R$ ${Store.formatCurrency(banks.other?.invested || 0)})</label>
+                            <input type="number" id="pay-invest-other" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add event listeners to update remaining total
+            const inputs = sourcesContainer.querySelectorAll('.payment-input');
+            const initialTotal = stats.expense;
+
+            const updateTotal = () => {
+                let totalPaid = 0;
+                inputs.forEach(input => {
+                    totalPaid += parseFloat(input.value) || 0;
+                });
+
+                const remaining = initialTotal - totalPaid;
+                const remainingFormatted = Store.formatCurrency(remaining > 0 ? remaining : 0);
+
+                if (totalEl) {
+                    totalEl.innerText = `R$ ${remainingFormatted}`;
+                    // Optional: Change color if fully paid
+                    if (remaining <= 0.01) {
+                        totalEl.classList.remove('text-rose-700', 'dark:text-rose-300');
+                        totalEl.classList.add('text-emerald-600', 'dark:text-emerald-400');
+                        totalEl.innerText = "Total Pago!";
+                    } else {
+                        totalEl.classList.add('text-rose-700', 'dark:text-rose-300');
+                        totalEl.classList.remove('text-emerald-600', 'dark:text-emerald-400');
+                    }
+                }
+            };
+
+            inputs.forEach(input => input.addEventListener('input', updateTotal));
+        }
 
         modal.classList.remove('hidden');
         setTimeout(() => {
@@ -1021,30 +1357,65 @@ const ExpensesModule = {
     },
 
     confirmCloseMonth() {
-        const salaryAmount = parseFloat(document.getElementById('pay-source-salary').value) || 0;
-        const investmentAmount = parseFloat(document.getElementById('pay-source-investment').value) || 0;
-        const otherAmount = parseFloat(document.getElementById('pay-source-other').value) || 0;
+        // Get values from specific inputs
+        const balanceNubank = parseFloat(document.getElementById('pay-balance-nubank')?.value) || 0;
+        const balanceMP = parseFloat(document.getElementById('pay-balance-mercadoPago')?.value) || 0;
+        const balanceOther = parseFloat(document.getElementById('pay-balance-other')?.value) || 0;
 
-        const totalPaid = salaryAmount + investmentAmount + otherAmount;
+        const investNubank = parseFloat(document.getElementById('pay-invest-nubank')?.value) || 0;
+        const investMP = parseFloat(document.getElementById('pay-invest-mercadoPago')?.value) || 0;
+        const investOther = parseFloat(document.getElementById('pay-invest-other')?.value) || 0;
+
+        const totalPaid = balanceNubank + balanceMP + balanceOther + investNubank + investMP + investOther;
 
         if (totalPaid === 0) {
-            alert('Por favor, informe um valor para pelo menos uma fonte de pagamento.');
-            return;
+            if (!confirm('Nenhum valor de pagamento foi informado. Deseja fechar o mês apenas marcando as despesas como pagas, sem debitar de nenhum saldo?')) {
+                return;
+            }
         }
 
-        // Process Investment Withdrawal
-        if (investmentAmount > 0) {
-            const withdrawal = {
-                description: `Pagamento de Fatura - ${this.getMonthName(this.state.currentMonth)} `,
-                amount: -Math.abs(investmentAmount), // Negative for withdrawal
-                type: 'investment',
-                date: new Date().toISOString().split('T')[0],
-                investmentOperation: 'withdrawal'
-            };
-            Store.addExpense(withdrawal);
-        }
+        // 1. Process Balance Deductions
+        if (balanceNubank > 0) Store.updateBankBalance('nubank', -balanceNubank, 'balance');
+        if (balanceMP > 0) Store.updateBankBalance('mercadoPago', -balanceMP, 'balance');
+        if (balanceOther > 0) Store.updateBankBalance('other', -balanceOther, 'balance');
 
-        alert(`Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalPaid)} \n(Salário: ${Store.formatCurrency(salaryAmount)}, Investimentos: ${Store.formatCurrency(investmentAmount)}, Outros: ${Store.formatCurrency(otherAmount)})`);
+        // 2. Process Investment Deductions (Create Withdrawal Transactions + Deduct from Invested)
+        const processInvestment = (amount, bankId, bankName) => {
+            if (amount > 0) {
+                // Deduct from invested amount in store
+                Store.updateBankBalance(bankId, -amount, 'invested');
+
+                // Create withdrawal record
+                const withdrawal = {
+                    description: `Pagamento Fatura (${bankName}) - ${this.getMonthName(this.state.currentMonth)}`,
+                    amount: -Math.abs(amount), // Negative for withdrawal
+                    type: 'investment',
+                    date: new Date().toISOString().split('T')[0],
+                    investmentOperation: 'withdrawal',
+                    bankId: bankId
+                };
+                Store.addExpense(withdrawal);
+            }
+        };
+
+        processInvestment(investNubank, 'nubank', 'Nubank');
+        processInvestment(investMP, 'mercadoPago', 'Mercado Pago');
+        processInvestment(investOther, 'other', 'Outros');
+
+        // 3. Mark expenses as paid
+        const expenses = Store.getExpenses();
+        const currentMonth = this.state.currentMonth;
+        const currentYear = this.state.currentYear;
+
+        expenses.forEach(e => {
+            const d = new Date(e.date);
+            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear && e.type === 'expense' && !e.paid) {
+                e.paid = true;
+                Store.updateExpense(e);
+            }
+        });
+
+        alert(`Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalPaid)}`);
         this.closeCloseMonthModal();
         router.handleRoute();
     },
@@ -1246,6 +1617,117 @@ const ExpensesModule = {
                 cutout: '70%'
             }
         });
+    },
+
+    // --- Bank Management ---
+    openBankModal(bankId) {
+        const banks = Store.getBanks();
+        const bankData = banks[bankId];
+        let bankName = '';
+        if (bankId === 'nubank') bankName = 'Nubank';
+        else if (bankId === 'mercadoPago') bankName = 'Mercado Pago';
+        else bankName = 'Outros Investimentos';
+
+        // Create modal if not exists
+        if (!document.getElementById('bank-modal')) {
+            const modalHtml = `
+                <div id="bank-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+                    <div class="bg-white dark:bg-zenox-surface rounded-2xl w-[95%] md:w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-white/10">
+                        <div class="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800 dark:text-white" id="bank-modal-title">Editar Banco</h3>
+                            <button onclick="ExpensesModule.closeBankModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                                <i class="fa-solid fa-xmark text-xl"></i>
+                            </button>
+                        </div>
+                        <form id="bank-form" onsubmit="ExpensesModule.saveBankData(event)" class="p-6 space-y-5">
+                            <input type="hidden" id="bank-modal-id" name="bankId">
+                            
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Saldo em Conta (R$)</label>
+                                <input type="number" name="balance" step="0.01" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Investido (R$)</label>
+                                <input type="number" name="invested" step="0.01" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
+                            </div>
+
+                            <div class="flex gap-2">
+                                <button type="button" onclick="ExpensesModule.resetBank(document.getElementById('bank-modal-id').value)" class="px-4 py-3 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl font-bold transition-all border border-rose-200 dark:border-rose-500/20">
+                                    Zerar
+                                </button>
+                                <button type="submit" class="flex-1 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all">
+                                    Salvar Alterações
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        const modal = document.getElementById('bank-modal');
+        const title = document.getElementById('bank-modal-title');
+        const idInput = document.getElementById('bank-modal-id');
+        const balanceInput = document.querySelector('#bank-form input[name="balance"]');
+        const investedInput = document.querySelector('#bank-form input[name="invested"]');
+
+        title.innerText = `Editar ${bankName}`;
+        idInput.value = bankId;
+        balanceInput.value = bankData.balance;
+        investedInput.value = bankData.invested;
+
+        modal.classList.remove('hidden');
+        // Trigger reflow
+        void modal.offsetWidth;
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+        modal.querySelector('div').classList.add('scale-100');
+    },
+
+    closeBankModal() {
+        const modal = document.getElementById('bank-modal');
+        if (modal) {
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.remove('scale-100');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+    },
+
+    saveBankData(event) {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        const bankId = formData.get('bankId');
+        const balance = parseFloat(formData.get('balance'));
+        const invested = parseFloat(formData.get('invested'));
+
+        Store.setBankData(bankId, { balance, invested });
+        this.closeBankModal();
+        this.render(); // Re-render to show updates
+    },
+
+    resetBank(bankId) {
+        if (confirm('Tem certeza que deseja zerar o saldo e investimentos deste banco?')) {
+            const banks = Store.getBanks();
+            if (banks[bankId]) {
+                banks[bankId].balance = 0;
+                banks[bankId].invested = 0;
+                Store.save();
+                this.render();
+                this.closeBankModal();
+            }
+        }
+    },
+
+    resetToCurrentMonth() {
+        const now = new Date();
+        this.state.currentMonth = now.getMonth();
+        this.state.currentYear = now.getFullYear();
+        router.handleRoute();
     },
 
     afterRender() {

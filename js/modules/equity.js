@@ -1,8 +1,8 @@
-const EquityModule = {
+window.EquityModule = {
     render() {
         const trades = Store.getTrades();
         const stats = this.calculateStats(trades);
-        const initialBalance = 50000; // Default Prop Account Balance
+        const initialBalance = parseFloat(localStorage.getItem('zenox_initial_balance')) || 50000; // Default Prop Account Balance
         const currentBalance = initialBalance + stats.totalProfit;
 
         return `
@@ -18,10 +18,15 @@ const EquityModule = {
                     <!-- Prop Account Balance -->
                     <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 relative overflow-hidden group">
                         <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <i class="fa-solid fa-building-columns text-6xl text-gray-400"></i>
+                            <i class="fa-solid fa-building-columns text-6xl text-gray-600 dark:text-gray-300"></i>
+                        </div>
+                        <div class="absolute top-4 right-4 z-10">
+                            <button onclick="EquityModule.editBalance()" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 flex items-center justify-center text-gray-600 dark:text-gray-300 transition-colors">
+                                <i class="fa-solid fa-gear text-sm"></i>
+                            </button>
                         </div>
                         <div class="flex items-center gap-4 mb-4">
-                            <div class="w-10 h-10 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-600 dark:text-gray-300">
+                            <div class="w-10 h-10 rounded-lg bg-gray-800 dark:bg-white/20 flex items-center justify-center text-white">
                                 <i class="fa-solid fa-dollar-sign text-lg"></i>
                             </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo da Conta Prop</span>
@@ -40,7 +45,7 @@ const EquityModule = {
                             </span>
                         </div>
                         <div class="flex items-center gap-4 mb-4">
-                            <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                            <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white">
                                 <i class="fa-solid fa-chart-line text-lg"></i>
                             </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Saldo Atual</span>
@@ -59,7 +64,7 @@ const EquityModule = {
                             </span>
                         </div>
                         <div class="flex items-center gap-4 mb-4">
-                            <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                            <div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
                                 <i class="fa-solid fa-bullseye text-lg"></i>
                             </div>
                             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Lucro Total</span>
@@ -223,6 +228,16 @@ const EquityModule = {
         return Store.formatCurrency(value);
     },
 
+    editBalance() {
+        const current = parseFloat(localStorage.getItem('zenox_initial_balance')) || 50000;
+        const newBalance = prompt('Digite o novo saldo inicial da conta:', current);
+
+        if (newBalance !== null && !isNaN(newBalance)) {
+            localStorage.setItem('zenox_initial_balance', parseFloat(newBalance));
+            router.handleRoute(); // Re-render
+        }
+    },
+
     renderChart() {
         const ctx = document.getElementById('equityChart');
         if (!ctx) return;
@@ -230,7 +245,7 @@ const EquityModule = {
         const trades = Store.getTrades();
         const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        let balance = 50000;
+        let balance = parseFloat(localStorage.getItem('zenox_initial_balance')) || 50000;
         const dataPoints = [balance];
         const labels = ['Início'];
 
