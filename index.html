@@ -59,6 +59,11 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
     <script>
+        // Access Control Check
+        if (!localStorage.getItem('zenox_access_granted')) {
+            window.location.href = 'login.html';
+        }
+
         // Theme Initialization
         if (localStorage.getItem('theme') === 'light') {
             document.documentElement.classList.remove('dark');

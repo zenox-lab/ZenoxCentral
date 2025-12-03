@@ -350,6 +350,10 @@ window.Store = {
         }
     },
     getHabits() { return this.state.habits || []; },
+    deleteHabit(id) {
+        this.state.habits = this.state.habits.filter(h => h.id !== id);
+        this.save();
+    },
 
     // --- Strategies ---
     addStrategy(strategy) {

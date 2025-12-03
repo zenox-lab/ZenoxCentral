@@ -2,150 +2,151 @@ window.DashboardModule = {
     render() {
         const trades = Store.getTrades();
         const expenses = Store.getExpenses();
+        const habits = Store.getHabits();
 
-        // Calculate Trade Stats
-        const totalTrades = trades.length;
-        const tradeBalance = trades.reduce((acc, t) => acc + parseFloat(t.result), 0);
-        const winRate = totalTrades > 0 ? ((trades.filter(t => t.result > 0).length / totalTrades) * 100).toFixed(1) : 0;
+        // --- Stats Calculations ---
 
-        // Calculate Today and Month Stats
-        const today = new Date().toISOString().split('T')[0];
+        // 1. Expenses (Current Month)
         const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        const currentMonthExpenses = expenses.filter(e => e.date.startsWith(currentMonth));
+        const totalExpenses = currentMonthExpenses.reduce((acc, e) => acc + parseFloat(e.amount), 0);
+        const expensesCount = currentMonthExpenses.length;
 
-        const todayProfit = trades
-            .filter(t => t.date === today)
-            .reduce((acc, t) => acc + parseFloat(t.result), 0);
+        // 2. Trades (Today)
+        const today = new Date().toISOString().split('T')[0];
+        const todayTrades = trades.filter(t => t.date === today);
+        const todayProfit = todayTrades.reduce((acc, t) => acc + parseFloat(t.result), 0);
+        const tradesCount = todayTrades.length;
 
-        const monthProfit = trades
-            .filter(t => t.date.startsWith(currentMonth))
-            .reduce((acc, t) => acc + parseFloat(t.result), 0);
-
-        // Calculate Expenses
-        const totalExpenses = expenses
-            .filter(e => e.date.startsWith(currentMonth))
-            .reduce((acc, e) => acc + parseFloat(e.amount), 0);
-
-        const netResult = monthProfit - totalExpenses;
+        // 3. Habits (Today's Completion)
+        let habitsCompletion = 0;
+        if (habits.length > 0) {
+            const completedToday = habits.filter(h => h.history && h.history[today]).length;
+            habitsCompletion = Math.round((completedToday / habits.length) * 100);
+        }
 
         return `
             <div class="animate-fade-in space-y-8">
-
-
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Trade Balance -->
-                    <div class="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-4 right-4 text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-chart-line text-2xl"></i>
+                
+                <!-- Top Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Expenses Card -->
+                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
+                        <div class="flex justify-between items-start z-10">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Gastos do Mês</p>
+                                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${Store.formatCurrency(totalExpenses)}</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-orange-500">
+                                <i class="fa-solid fa-wallet text-lg"></i>
+                            </div>
                         </div>
-                        <p class="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-1 uppercase tracking-wider">Resultado Total</p>
-                        <h3 class="text-2xl font-bold mt-2 ${tradeBalance >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-400'}">
-                            $ ${Store.formatCurrency(tradeBalance)}
-                        </h3>
-                        <p class="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-2">Win Rate: <span class="font-bold">${winRate}%</span></p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 z-10">${expensesCount} despesas registradas</p>
+                        
+                        <!-- Background Decoration -->
+                        <div class="absolute -bottom-4 -right-4 text-orange-500/5 dark:text-orange-500/10 transform rotate-12">
+                            <i class="fa-solid fa-wallet text-8xl"></i>
+                        </div>
                     </div>
 
-                    <!-- Profit Today -->
-                    <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-4 right-4 text-blue-500 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-dollar-sign text-2xl"></i>
+                    <!-- Trades Card -->
+                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
+                        <div class="flex justify-between items-start z-10">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Trades Hoje</p>
+                                <h3 class="text-2xl font-bold ${todayProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'} mt-1">$ ${Store.formatCurrency(todayProfit)}</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center text-blue-500">
+                                <i class="fa-solid fa-chart-line text-lg"></i>
+                            </div>
                         </div>
-                        <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wider">Lucro Hoje</p>
-                        <h3 class="text-2xl font-bold mt-2 ${todayProfit >= 0 ? 'text-blue-700 dark:text-blue-300' : 'text-rose-600 dark:text-rose-400'}">
-                            $ ${Store.formatCurrency(todayProfit)}
-                        </h3>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 z-10">${tradesCount} operações realizadas</p>
+
+                        <!-- Background Decoration -->
+                        <div class="absolute -bottom-4 -right-4 text-blue-500/5 dark:text-blue-500/10 transform rotate-12">
+                            <i class="fa-solid fa-chart-line text-8xl"></i>
+                        </div>
                     </div>
 
-                    <!-- Profit Month -->
-                    <div class="bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-500/20 rounded-2xl p-6 relative overflow-hidden group">
-                        <div class="absolute top-4 right-4 text-purple-500 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <i class="fa-solid fa-calendar-check text-2xl"></i>
+                    <!-- Habits Card -->
+                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
+                        <div class="flex justify-between items-start z-10">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Hábitos</p>
+                                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">${habitsCompletion}%</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                <i class="fa-solid fa-check-circle text-lg"></i>
+                            </div>
                         </div>
-                        <p class="text-xs font-medium text-purple-600 dark:text-purple-400 mb-1 uppercase tracking-wider">Lucro Mês</p>
-                        <h3 class="text-2xl font-bold mt-2 ${monthProfit >= 0 ? 'text-purple-700 dark:text-purple-300' : 'text-rose-600 dark:text-rose-400'}">
-                            $ ${Store.formatCurrency(monthProfit)}
-                        </h3>
-                    </div>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 z-10">Conclusão diária</p>
 
+                        <!-- Background Decoration -->
+                        <div class="absolute -bottom-4 -right-4 text-emerald-500/5 dark:text-emerald-500/10 transform rotate-12">
+                            <i class="fa-solid fa-check-circle text-8xl"></i>
+                        </div>
+                    </div>
 
                 </div>
 
-                <!-- Recent Activity Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Recent Trades -->
-                    <div class="bg-white dark:bg-zenox-surface rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Últimos Trades</h3>
-                            <button onclick="router.navigate('trades')" class="text-sm text-zenox-primary hover:text-zenox-primary/80 transition-colors">Ver todos</button>
-                        </div>
-                        <div class="space-y-4">
-                            ${trades.slice(0, 5).map(trade => `
-                                <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white/5 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg ${trade.result >= 0 ? 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400'} flex items-center justify-center">
-                                            <i class="fa-solid ${trade.result >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down'}"></i>
-                                        </div>
-                                        <div>
-                                            <p class="font-bold text-gray-800 dark:text-white">${trade.asset}</p>
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">${trade.date} • ${trade.strategy}</p>
-                                        </div>
-                                    </div>
-                                    <span class="font-mono font-bold ${trade.result >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
-                                        ${trade.result >= 0 ? '+' : ''}$ ${Store.formatCurrency(trade.result)}
-                                    </span>
-                                </div>
-                            `).join('')}
-                            ${trades.length === 0 ? '<p class="text-gray-500 text-center py-4">Nenhum trade registrado.</p>' : ''}
-                        </div>
-                    </div>
+                <!-- Shortcuts Section -->
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Atalhos Rápidos</h2>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        
+                        <!-- Financeiro -->
+                        <button onclick="router.navigate('expenses')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-zenox-primary/10 transition-colors">
+                                <i class="fa-solid fa-wallet text-gray-400 dark:text-gray-500 group-hover:text-zenox-primary transition-colors text-lg"></i>
+                            </div>
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Financeiro</span>
+                        </button>
 
-                    <!-- Quick Actions & Expenses -->
-                    <div class="space-y-6">
-                        <!-- Quick Actions -->
-                        <div class="bg-white dark:bg-zenox-surface rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6">
-                            <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-6">Acesso Rápido</h3>
-                            <div class="grid grid-cols-2 gap-4">
-                                <button onclick="router.navigate('trades')" class="p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-left group">
-                                    <i class="fa-solid fa-plus text-zenox-primary mb-2 text-xl group-hover:scale-110 transition-transform"></i>
-                                    <p class="font-bold text-gray-800 dark:text-white">Novo Trade</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Registrar operação</p>
-                                </button>
-                                <button onclick="router.navigate('notes')" class="p-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-left group">
-                                    <i class="fa-solid fa-note-sticky text-zenox-secondary mb-2 text-xl group-hover:scale-110 transition-transform"></i>
-                                    <p class="font-bold text-gray-800 dark:text-white">Nova Nota</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">Criar anotação</p>
-                                </button>
+                        <!-- Diário de Trade -->
+                        <button onclick="router.navigate('trades')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-blue-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-500/10 transition-colors">
+                                <i class="fa-solid fa-chart-candlestick text-gray-400 dark:text-gray-500 group-hover:text-blue-500 transition-colors text-lg"></i>
                             </div>
-                        </div>
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Diário de Trade</span>
+                        </button>
 
-                        <!-- Recent Expenses -->
-                        <div class="bg-white dark:bg-zenox-surface rounded-2xl shadow-card border border-gray-100 dark:border-white/5 p-6">
-                            <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-xl font-bold text-gray-800 dark:text-white">Últimas Despesas</h3>
-                                <button onclick="router.navigate('expenses')" class="text-sm text-zenox-primary hover:text-zenox-primary/80 transition-colors">Ver todas</button>
+                        <!-- Hábitos -->
+                        <button onclick="router.navigate('habits')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
+                                <i class="fa-solid fa-list-check text-gray-400 dark:text-gray-500 group-hover:text-emerald-500 transition-colors text-lg"></i>
                             </div>
-                            <div class="space-y-4">
-                                ${expenses.slice(0, 3).map(expense => `
-                                    <div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-100 dark:border-white/5">
-                                        <div class="flex items-center gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 flex items-center justify-center">
-                                                <i class="fa-solid fa-receipt"></i>
-                                            </div>
-                                            <div>
-                                                <p class="font-bold text-gray-800 dark:text-white">${expense.description}</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">${expense.date}</p>
-                                            </div>
-                                        </div>
-                                        <span class="font-mono font-bold text-gray-800 dark:text-white">
-                                            R$ ${Store.formatCurrency(expense.amount)}
-                                        </span>
-                                    </div>
-                                `).join('')}
-                                ${expenses.length === 0 ? '<p class="text-gray-500 text-center py-4">Nenhuma despesa registrada.</p>' : ''}
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Hábitos</span>
+                        </button>
+
+                        <!-- Anotações -->
+                        <button onclick="router.navigate('notes')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-secondary/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-zenox-secondary/10 transition-colors">
+                                <i class="fa-solid fa-note-sticky text-gray-400 dark:text-gray-500 group-hover:text-zenox-secondary transition-colors text-lg"></i>
                             </div>
-                        </div>
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Anotações</span>
+                        </button>
+
+                         <!-- Estratégias -->
+                        <button onclick="router.navigate('strategies')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-accent/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-zenox-accent/10 transition-colors">
+                                <i class="fa-solid fa-bullseye text-gray-400 dark:text-gray-500 group-hover:text-zenox-accent transition-colors text-lg"></i>
+                            </div>
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Estratégias</span>
+                        </button>
+
+                        <!-- Checklist -->
+                        <button onclick="router.navigate('checklist')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-pink-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                            <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-pink-500/10 transition-colors">
+                                <i class="fa-solid fa-clipboard-list text-gray-400 dark:text-gray-500 group-hover:text-pink-500 transition-colors text-lg"></i>
+                            </div>
+                            <span class="text-sm font-bold text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Checklist</span>
+                        </button>
+
                     </div>
                 </div>
+
             </div>
         `;
     }

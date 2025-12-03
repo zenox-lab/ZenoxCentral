@@ -132,7 +132,18 @@ const AuthModule = {
     logout() {
         if (auth) {
             auth.signOut();
-            window.location.reload();
+        }
+        localStorage.removeItem('zenox_access_granted');
+        window.location.href = 'login.html';
+    },
+
+    handleAuthClick() {
+        if (Store.currentUser) {
+            if (confirm('Deseja sair da sua conta?')) {
+                this.logout();
+            }
+        } else {
+            this.openModal();
         }
     }
 };
