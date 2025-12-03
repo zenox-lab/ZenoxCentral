@@ -144,7 +144,7 @@ window.HabitsModule = {
                                                 </div>
                                             </td>
                                             <td class="p-3 text-right">
-                                                <button onclick="HabitsModule.deleteHabit('${habit.id}')" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onclick="HabitsModule.deleteHabit('${habit.id}')" class="text-gray-400 hover:text-red-500 transition-all">
                                                     <i class="fa-solid fa-trash text-xs"></i>
                                                 </button>
                                             </td>
@@ -344,6 +344,7 @@ window.HabitsModule = {
     },
 
     deleteHabit(id) {
+        console.log('Attempting to delete habit:', id);
         if (confirm('Deseja excluir este hábito?')) {
             Store.deleteHabit(id);
             const container = document.getElementById('app-container');
