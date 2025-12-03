@@ -21,96 +21,139 @@ window.Store = {
         }
     },
 
-    init() {
+    async init() {
+        return new Promise((resolve) => {
+            // Check if Firebase is initialized
+            if (typeof auth !== 'undefined') {
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('User logged in:', user.email);
+                        await this.loadFromFirestore(user.uid);
+
+                        // Update UI button
+                        const btnText = document.getElementById('auth-btn-text');
+                        const btnIcon = document.getElementById('auth-btn-icon');
+                        if (btnText) btnText.textContent = 'Logout';
+                        if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
+                    } else {
+                        this.currentUser = null;
+                        console.log('User logged out');
+                        this.loadFromLocalStorage();
+
+                        // Update UI button
+                        const btnText = document.getElementById('auth-btn-text');
+                        const btnIcon = document.getElementById('auth-btn-icon');
+                        if (btnText) btnText.textContent = 'Login';
+                        if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
+                    }
+                    resolve();
+                });
+            } else {
+                console.warn('Firebase Auth not available, using LocalStorage only');
+                this.loadFromLocalStorage();
+                resolve();
+            }
+        });
+    },
+
+    loadFromLocalStorage() {
         if (localStorage.getItem(this.STORAGE_KEY)) {
             this.state = JSON.parse(localStorage.getItem(this.STORAGE_KEY));
-
-            // Migration: Add categories if missing
-            if (!this.state.categories) {
-                this.state.categories = {
-                    income: ['Salário', 'Freelance', 'Dividendos', 'Presente', 'Outros'],
-                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Serviços', 'Dívidas', 'Outros'],
-                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros']
-                };
-                this.save();
-            }
-
-            // Migration: Add expenseTypes if missing
-            if (!this.state.expenseTypes) {
-                this.state.expenseTypes = ['Fixa', 'Variável', 'Extra', 'Adicional'];
-                this.save();
-            }
-
-            // Migration: Add strategies if missing
-            if (!this.state.strategies) {
-                this.state.strategies = [];
-                this.save();
-            }
-
-            // Migration: Add checklists if missing
-            if (!this.state.checklists) {
-                this.state.checklists = [];
-                this.save();
-            }
-
-            // Migration: Add banks if missing
-            if (!this.state.banks) {
-                this.state.banks = {
-                    nubank: { balance: 0, invested: 0 },
-                    mercadoPago: { balance: 0, invested: 0 }
-                };
-                this.save();
-            }
-
-            // Migration: Add assets if missing
-            if (!this.state.assets) {
-                this.state.assets = ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'];
-                this.save();
-            }
-
-            // Migration: Add timeframes if missing
-            if (!this.state.timeframes) {
-                this.state.timeframes = ['1m', '5m', '15m', '1h', '4h', '1D'];
-                this.save();
-            }
-
-            // Auto-cleanup demo expenses (IDs 1, 2, 3) if they exist
-            if (this.state.expenses && this.state.expenses.some(e => ['1', '2', '3'].includes(e.id))) {
-                this.state.expenses = this.state.expenses.filter(e => !['1', '2', '3'].includes(e.id));
-                this.save();
-            }
+            this.runMigrations();
         } else {
-            this.state = {
-                theme: 'dark',
-                trades: [],
-                expenses: [],
-                habits: this.getDemoHabits(),
-                notes: this.getDemoNotes(),
-                strategies: [],
-                categories: {
-                    income: ['Salário', 'Freelance', 'Dividendos', 'Presente', 'Outros'],
-                    expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Serviços', 'Dívidas', 'Outros'],
-                    investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros']
-                },
-                expenseTypes: ['Fixa', 'Variável', 'Extra', 'Adicional'],
-                assets: ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'],
-                timeframes: ['1m', '5m', '15m', '1h', '4h', '1D'],
-                banks: {
-                    nubank: { balance: 0, invested: 0 },
-                    mercadoPago: { balance: 0, invested: 0 }
-                }
-            };
-            this.save();
+            this.setDefaultState();
         }
     },
 
-    save() {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
+    async loadFromFirestore(uid) {
+        try {
+            const doc = await db.collection('users').doc(uid).get();
+            if (doc.exists) {
+                this.state = doc.data();
+                this.runMigrations();
+                console.log('Data loaded from Firestore');
+            } else {
+                console.log('No data in Firestore, migrating LocalStorage...');
+                this.loadFromLocalStorage(); // Load local first
+                this.saveToFirestore(); // Then upload to cloud
+            }
+        } catch (error) {
+            console.error('Error loading from Firestore:', error);
+            this.loadFromLocalStorage(); // Fallback
+        }
     },
 
-    // --- Categories ---
-    getCategories(type) {
-        return this.state.categories[type] || [];
+    setDefaultState() {
+        this.state = {
+            theme: 'dark',
+            trades: [],
+            expenses: [],
+            habits: [],
+            notes: [],
+            strategies: [],
+            checklists: [],
+            categories: {
+                income: ['Salário', 'Freelance', 'Dividendos', 'Presente', 'Outros'],
+                expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Compras', 'Serviços', 'Dívidas', 'Outros'],
+                investment: ['Ações', 'FIIs', 'Renda Fixa', 'Cripto', 'Reserva', 'Outros']
+            },
+            expenseTypes: ['Fixa', 'Variável', 'Extra', 'Adicional'],
+            assets: ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'],
+            timeframes: ['1m', '5m', '15m', '1h', '4h', '1D'],
+            banks: {
+                nubank: { balance: 0, invested: 0 },
+                mercadoPago: { balance: 0, invested: 0 }
+            }
+        };
+        this.save();
+    },
+
+    runMigrations() {
+        // Migration: Add assets if missing
+        if (!this.state.assets) {
+            this.state.assets = ['SP500', 'NASDAQ', 'XAUUSD', 'WIN', 'WDO', 'BTC', 'ETH'];
+        }
+
+        // Migration: Add timeframes if missing
+        if (!this.state.timeframes) {
+            this.state.timeframes = ['1m', '5m', '15m', '1h', '4h', '1D'];
+        }
+
+        // Migration: Add checklists if missing
+        if (!this.state.checklists) {
+            this.state.checklists = [];
+        }
+
+        // Auto-cleanup demo expenses
+        if (this.state.expenses && this.state.expenses.some(e => ['1', '2', '3'].includes(e.id))) {
+            this.state.expenses = this.state.expenses.filter(e => !['1', '2', '3'].includes(e.id));
+        }
+
+        this.save();
+    },
+
+    save() {
+        // Save to LocalStorage (Always backup)
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
+
+        // Save to Firestore (Debounced)
+        if (this.currentUser && typeof db !== 'undefined') {
+            clearTimeout(this.saveTimeout);
+            this.saveTimeout = setTimeout(() => {
+                this.saveToFirestore();
+            }, 1000); // 1s debounce
+        }
+    },
+
+    async saveToFirestore() {
+        if (!this.currentUser) return;
+        try {
+            await db.collection('users').doc(this.currentUser.uid).set(this.state, { merge: true });
+            console.log('Data saved to Firestore');
+        } catch (error) {
+            console.error('Error saving to Firestore:', error);
+        }
     },
 
     addCategory(type, name) {
@@ -414,4 +457,6 @@ window.Store = {
     }
 };
 
-Store.init();
+// Initialize Store at the end of the file is NOT needed anymore
+// because we will call it from app.js
+// Store.init();

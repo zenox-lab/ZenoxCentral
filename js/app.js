@@ -93,21 +93,8 @@ ${error.stack || error.message}
             }
         } else {
             // Placeholder for new routes
-            if (['equity'].includes(hash)) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-center space-y-4 animate-fade-in">
-                        <div class="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center">
-                            <i class="fa-solid fa-hammer text-3xl text-gray-400"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Em Desenvolvimento</h2>
-                            <p class="text-gray-500 dark:text-gray-400">O módulo <strong>${hash.charAt(0).toUpperCase() + hash.slice(1)}</strong> estará disponível em breve.</p>
-                        </div>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = '<h1 class="text-2xl font-bold text-gray-800 dark:text-white">404 - Página não encontrada</h1>';
-            }
+            // Placeholder for new routes
+            container.innerHTML = '<h1 class="text-2xl font-bold text-gray-800 dark:text-white">404 - Página não encontrada</h1>';
         }
     }
 };
@@ -158,7 +145,12 @@ window.toggleTheme = function () {
 
 // Initialize App
 // Initialize App
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Store (and Firebase) to initialize
+    if (window.Store) {
+        await window.Store.init();
+    }
+
     if (window.router) {
         window.router.init();
     } else {

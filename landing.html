@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenox Central - Dashboard</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --bg-card: #18181b;
+            --bg-card-hover: #27272a;
+            --primary: #06b6d4;
+            /* Cyan 500 */
+            --primary-glow: rgba(6, 182, 212, 0.4);
+            --secondary: #8b5cf6;
+            /* Violet 500 */
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --border: #27272a;
+            --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Header --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 1.5rem 2rem;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.05em;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(9, 9, 11, 0) 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            line-height: 1.1;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, #fff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--primary);
+            color: #000;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--primary-glow);
+            background: #22d3ee;
+            /* Cyan 400 */
+        }
+
+        /* --- Stats Grid --- */
+        .stats-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .icon-finance {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+
+        .icon-trade {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--primary);
+        }
+
+        .icon-habits {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Shortcuts --- */
+        .shortcuts-section {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto 4rem;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .shortcut-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .shortcut-btn:hover {
+            background: var(--bg-card-hover);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .shortcut-btn i {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .shortcuts-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+        <a href="#" class="logo">
+            <div class="logo-icon">
+                <i class="fa-solid fa-bolt text-white text-xs"></i>
+            </div>
+            ZENOX
+        </a>
+        <nav class="nav-menu">
+            <a href="index.html#dashboard" class="nav-link">Dashboard</a>
+            <a href="index.html#trades" class="nav-link">Diário de Trade</a>
+            <a href="index.html#expenses" class="nav-link">Financeiro</a>
+            <a href="index.html#habits" class="nav-link">Hábitos</a>
+        </nav>
+        <button class="mobile-menu-btn">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-badge">✨ Dashboard Financeiro 2.0</div>
+        <h1 class="hero-title">ZENOX CENTRAL</h1>
+        <p class="hero-subtitle">
+            Controle total sobre suas finanças, trades e hábitos em um único lugar.
+            Simples, poderoso e desenhado para sua evolução.
+        </p>
+        <a href="index.html" class="cta-button">
+            <span>Acessar Dashboard</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </section>
+
+    <!-- Stats Cards -->
+    <div class="stats-container">
+        <!-- Financeiro -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">Gastos do Mês</div>
+                    <div class="stat-value" id="expense-value">R$ 0,00</div>
+                </div>
+                <div class="stat-icon icon-finance">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+            </div>
+            <div class="stat-desc">
+                <span class="text-white" id="expense-count">0</span> despesas registradas
+            </div>
+        </div>
+
+        <!-- Trades -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">Trades Hoje</div>
+                    <div class="stat-value" id="trade-value">$0.00</div>
+                </div>
+                <div class="stat-icon icon-trade">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="stat-desc">
+                <span class="text-white" id="trade-count">0</span> operações realizadas
+            </div>
+        </div>
+
+        <!-- Hábitos -->
+        <div class="stat-card">
+            <div class="stat-header">
+                <div>
+                    <div class="stat-title">Hábitos</div>
+                    <div class="stat-value" id="habit-value">0%</div>
+                </div>
+                <div class="stat-icon icon-habits">
+                    <i class="fa-solid fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="stat-desc">
+                Conclusão diária
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortcuts -->
+    <section class="shortcuts-section">
+        <h2 class="section-title">Atalhos Rápidos</h2>
+        <div class="shortcuts-grid">
+            <a href="index.html#expenses" class="shortcut-btn">
+                <i class="fa-solid fa-money-bill-wave text-yellow-500"></i>
+                <span>Financeiro</span>
+            </a>
+            <a href="index.html#trades" class="shortcut-btn">
+                <i class="fa-solid fa-chart-candlestick text-blue-500"></i>
+                <span>Diário de Trade</span>
+            </a>
+            <a href="index.html#habits" class="shortcut-btn">
+                <i class="fa-solid fa-list-check text-emerald-500"></i>
+                <span>Hábitos</span>
+            </a>
+            <a href="index.html#notes" class="shortcut-btn">
+                <i class="fa-solid fa-note-sticky text-purple-500"></i>
+                <span>Anotações</span>
+            </a>
+            <a href="index.html#strategies" class="shortcut-btn">
+                <i class="fa-solid fa-bullseye text-pink-500"></i>
+                <span>Estratégias</span>
+            </a>
+            <a href="index.html#checklist" class="shortcut-btn">
+                <i class="fa-solid fa-clipboard-list text-orange-500"></i>
+                <span>Checklist</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Script for Dynamic Data -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load data from LocalStorage (Zenox Store)
+            const STORAGE_KEY = 'zenox_data';
+            const rawData = localStorage.getItem(STORAGE_KEY);
+
+            if (rawData) {
+                const data = JSON.parse(rawData);
+
+                // 1. Calculate Expenses (Current Month)
+                if (data.expenses) {
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+
+                    const monthExpenses = data.expenses.filter(e => {
+                        const d = new Date(e.date);
+                        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                    });
+
+                    const totalExpenses = monthExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+
+                    document.getElementById('expense-value').textContent = totalExpenses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    document.getElementById('expense-count').textContent = monthExpenses.length;
+                }
+
+                // 2. Calculate Trades (Today)
+                if (data.trades) {
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayTrades = data.trades.filter(t => t.date === today);
+                    const totalResult = todayTrades.reduce((sum, t) => sum + parseFloat(t.result || 0), 0);
+
+                    document.getElementById('trade-value').textContent = totalResult.toLocaleString('pt-BR', { style: 'currency', currency: 'USD' }).replace('US$', '$');
+                    document.getElementById('trade-count').textContent = todayTrades.length;
+                }
+
+                // 3. Calculate Habits (Today)
+                if (data.habits) {
+                    const today = new Date().toISOString().split('T')[0];
+                    const totalHabits = data.habits.length;
+                    let completed = 0;
+
+                    data.habits.forEach(h => {
+                        if (h.history && h.history[today]) completed++;
+                    });
+
+                    const percentage = totalHabits > 0 ? Math.round((completed / totalHabits) * 100) : 0;
+                    document.getElementById('habit-value').textContent = percentage + '%';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

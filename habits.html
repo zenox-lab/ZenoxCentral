@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenox Habits - Elite Tracker</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0a0f14;
+            --bg-card: #111821;
+            --bg-card-hover: #1a2530;
+            --primary: #00aaff;
+            --primary-glow: rgba(0, 170, 255, 0.4);
+            --primary-dim: rgba(0, 170, 255, 0.15);
+            --text-main: #e8f1f8;
+            --text-muted: #94a3b8;
+            --border: rgba(0, 170, 255, 0.2);
+            --gradient: linear-gradient(90deg, #0077aa, #00c6ff);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        /* --- Utilities --- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 12px rgba(0, 170, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0 20px rgba(0, 170, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .card-title {
+            font-size: 20px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Header --- */
+        .header-section {
+            margin-bottom: 8px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.7;
+            margin-top: 4px;
+            color: var(--text-muted);
+        }
+
+        /* --- Progress Circle --- */
+        .progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .circle-wrapper {
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+
+        svg.progress-ring {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        circle {
+            fill: transparent;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+
+        .bg-ring {
+            stroke: rgba(0, 170, 255, 0.1);
+        }
+
+        .progress-ring-circle {
+            stroke: var(--primary);
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            transition: stroke-dashoffset 1s ease-in-out;
+            filter: drop-shadow(0 0 8px var(--primary));
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* --- Heatmap --- */
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(16px, 1fr));
+            gap: 4px;
+            margin-top: 12px;
+        }
+
+        .heat-cell {
+            aspect-ratio: 1;
+            background: #1a2530;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .heat-cell:hover::after {
+            content: attr(data-date);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .level-0 {
+            background: #1a2530;
+        }
+
+        .level-1 {
+            background: #005f80;
+        }
+
+        .level-2 {
+            background: #0091c7;
+        }
+
+        .level-3 {
+            background: #00aaff;
+            box-shadow: 0 0 8px var(--primary);
+        }
+
+        .level-4 {
+            background: #ffffff;
+            box-shadow: 0 0 12px #ffffff;
+        }
+
+        /* --- Habits List --- */
+        .habit-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .habit-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .habit-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .habit-name-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .habit-check-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid var(--border);
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .habit-check-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .habit-check-btn.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .habit-check-btn i {
+            color: white;
+            font-size: 12px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s;
+        }
+
+        .habit-check-btn.checked i {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .habit-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .habit-streak {
+            font-size: 12px;
+            opacity: 0.6;
+            font-weight: 500;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #1b2733;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        /* --- Rituals --- */
+        .ritual-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ritual-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #0f141b;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 170, 255, 0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ritual-item:hover {
+            background: rgba(0, 170, 255, 0.05);
+            transform: translateX(4px);
+        }
+
+        .ritual-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .ritual-item.completed .ritual-check {
+            background: var(--primary);
+        }
+
+        .ritual-item.completed span {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+
+        .ritual-check i {
+            color: white;
+            font-size: 10px;
+            opacity: 0;
+        }
+
+        .ritual-item.completed .ritual-check i {
+            opacity: 1;
+        }
+
+        /* --- FAB --- */
+        .fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 0 20px var(--primary-glow);
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(90deg);
+            background: #33bbff;
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 24px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            margin-bottom: 16px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #0088cc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container animate-fade-in">
+
+        <div class="header-section">
+            <div class="title">Hábitos</div>
+            <div class="subtitle">Sua evolução diária, gamificada e visual</div>
+        </div>
+
+        <!-- Progresso Geral -->
+        <div class="card">
+            <div class="card-title">Progresso do mês</div>
+            <div class="progress-container">
+                <div class="circle-wrapper">
+                    <svg class="progress-ring">
+                        <circle class="bg-ring" cx="80" cy="80" r="70"></circle>
+                        <circle class="progress-ring-circle" id="month-progress-ring" cx="80" cy="80" r="70"></circle>
+                    </svg>
+                    <div class="progress-text" id="month-percent">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="card">
+            <div class="card-title">Heatmap mensal</div>
+            <div class="heatmap" id="heatmap">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Lista de Hábitos -->
+        <div class="card">
+            <div class="card-title">Meus Hábitos</div>
+            <div id="habits-list">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Rituais -->
+        <div class="card">
+            <div class="card-title">Ritual da manhã</div>
+            <div class="ritual-list" id="morning-ritual">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Ritual da noite</div>
+            <div class="ritual-list" id="night-ritual">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="HabitManager.openModal()">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="habit-modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6"
+                style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+                <h2 style="font-size: 20px; font-weight: 700;">Novo Hábito</h2>
+                <button onclick="HabitManager.closeModal()"
+                    style="background: none; border: none; color: #94a3b8; cursor: pointer;"><i
+                        class="fa-solid fa-xmark" style="font-size: 20px;"></i></button>
+            </div>
+            <form id="habit-form" onsubmit="HabitManager.saveHabit(event)">
+                <label
+                    style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block;">Nome
+                    do Hábito</label>
+                <input type="text" name="name" placeholder="Ex: Ler 10 páginas" required>
+
+                <label
+                    style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block;">Categoria</label>
+                <select name="category">
+                    <option value="Saúde">Saúde</option>
+                    <option value="Produtividade">Produtividade</option>
+                    <option value="Estudo">Estudo</option>
+                    <option value="Financeiro">Financeiro</option>
+                    <option value="Disciplina">Disciplina</option>
+                </select>
+
+                <button type="submit" class="btn-primary">Criar Hábito</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'zenox_habits_v3';
+
+        const HabitManager = {
+            data: {
+                habits: [],
+                rituals: {
+                    morning: [
+                        { id: 'm1', text: 'Beber água', completed: false },
+                        { id: 'm2', text: 'Alongamento', completed: false },
+                        { id: 'm3', text: 'Revisar metas', completed: false }
+                    ],
+                    night: [
+                        { id: 'n1', text: 'Revisão dos hábitos', completed: false },
+                        { id: 'n2', text: 'Gratidão', completed: false },
+                        { id: 'n3', text: 'Desligar telas', completed: false }
+                    ]
+                },
+                lastVisit: null
+            },
+
+            init() {
+                this.loadData();
+                this.checkDailyReset();
+                this.render();
+            },
+
+            loadData() {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    this.data = JSON.parse(stored);
+                } else {
+                    this.data.habits = [
+                        { id: 1, name: 'Beber água', category: 'Saúde', streak: 4, history: {} },
+                        { id: 2, name: 'Estudar 30 minutos', category: 'Estudo', streak: 2, history: {} }
+                    ];
+                }
+            },
+
+            saveData() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+                this.render();
+            },
+
+            checkDailyReset() {
+                const today = new Date().toISOString().split('T')[0];
+                if (this.data.lastVisit !== today) {
+                    this.data.rituals.morning.forEach(r => r.completed = false);
+                    this.data.rituals.night.forEach(r => r.completed = false);
+                    this.data.lastVisit = today;
+                    this.saveData();
+                }
+            },
+
+            toggleHabit(id) {
+                const habit = this.data.habits.find(h => h.id == id);
+                const today = new Date().toISOString().split('T')[0];
+
+                if (habit.history[today]) {
+                    delete habit.history[today];
+                    habit.streak = Math.max(0, habit.streak - 1);
+                } else {
+                    habit.history[today] = true;
+                    habit.streak += 1;
+                }
+                this.saveData();
+            },
+
+            toggleRitual(type, id) {
+                const item = this.data.rituals[type].find(i => i.id === id);
+                item.completed = !item.completed;
+                this.saveData();
+            },
+
+            render() {
+                this.renderProgress();
+                this.renderHeatmap();
+                this.renderHabits();
+                this.renderRituals();
+            },
+
+            renderProgress() {
+                const today = new Date().toISOString().split('T')[0];
+                const currentMonth = today.slice(0, 7);
+
+                let totalPossible = 0;
+                let totalCompleted = 0;
+                const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+
+                this.data.habits.forEach(h => {
+                    totalPossible += daysInMonth;
+                    Object.keys(h.history).forEach(date => {
+                        if (date.startsWith(currentMonth)) totalCompleted++;
+                    });
+                });
+
+                const percent = totalPossible === 0 ? 0 : Math.round((totalCompleted / totalPossible) * 100);
+
+                const circle = document.getElementById('month-progress-ring');
+                const radius = circle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+                const offset = circumference - (percent / 100) * circumference;
+
+                circle.style.strokeDashoffset = offset;
+                document.getElementById('month-percent').innerText = `${percent}%`;
+            },
+
+            renderHeatmap() {
+                const container = document.getElementById('heatmap');
+                container.innerHTML = '';
+
+                const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+                const currentMonth = new Date().toISOString().slice(0, 7);
+
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const day = i < 10 ? `0${i}` : i;
+                    const dateStr = `${currentMonth}-${day}`;
+
+                    let completedCount = 0;
+                    this.data.habits.forEach(h => {
+                        if (h.history[dateStr]) completedCount++;
+                    });
+
+                    const totalHabits = this.data.habits.length;
+                    let level = 0;
+                    if (totalHabits > 0) {
+                        const ratio = completedCount / totalHabits;
+                        if (ratio > 0.75) level = 4;
+                        else if (ratio > 0.5) level = 3;
+                        else if (ratio > 0.25) level = 2;
+                        else if (ratio > 0) level = 1;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = `heat-cell level-${level}`;
+                    div.setAttribute('data-date', dateStr);
+                    container.appendChild(div);
+                }
+            },
+
+            renderHabits() {
+                const container = document.getElementById('habits-list');
+                container.innerHTML = '';
+                const today = new Date().toISOString().split('T')[0];
+
+                this.data.habits.forEach(h => {
+                    const isDone = !!h.history[today];
+                    const currentMonth = today.slice(0, 7);
+                    const completedInMonth = Object.keys(h.history).filter(d => d.startsWith(currentMonth)).length;
+                    const daysInMonth = new Date().getDate();
+                    const percent = Math.min(100, Math.round((completedInMonth / daysInMonth) * 100));
+
+                    const html = `
+                    <div class="habit-row">
+                        <div class="habit-top">
+                            <div class="habit-name-group">
+                                <button class="habit-check-btn ${isDone ? 'checked' : ''}" onclick="HabitManager.toggleHabit(${h.id})">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                                <span class="habit-name">${h.name}</span>
+                            </div>
+                            <span class="habit-streak">Streak: ${h.streak} dias</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                    `;
+                    container.innerHTML += html;
+                });
+
+                if (this.data.habits.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; color:#94a3b8; font-size:14px; padding:20px;">Nenhum hábito criado.</p>';
+                }
+            },
+
+            renderRituals() {
+                const renderList = (list, type) => {
+                    return list.map(item => `
+                        <div class="ritual-item ${item.completed ? 'completed' : ''}" onclick="HabitManager.toggleRitual('${type}', '${item.id}')">
+                            <div class="ritual-check">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <span>${item.text}</span>
+                        </div>
+                    `).join('');
+                };
+
+                document.getElementById('morning-ritual').innerHTML = renderList(this.data.rituals.morning, 'morning');
+                document.getElementById('night-ritual').innerHTML = renderList(this.data.rituals.night, 'night');
+            },
+
+            openModal() {
+                document.getElementById('habit-modal').classList.add('active');
+            },
+
+            closeModal() {
+                document.getElementById('habit-modal').classList.remove('active');
+            },
+
+            saveHabit(event) {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const newHabit = {
+                    id: Date.now(),
+                    name: formData.get('name'),
+                    category: formData.get('category'),
+                    streak: 0,
+                    history: {}
+                };
+                this.data.habits.push(newHabit);
+                this.saveData();
+                this.closeModal();
+                event.target.reset();
+            }
+        };
+
+        HabitManager.init();
+    </script>
+</body>
+
+</html>

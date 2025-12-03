@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenox Notes - Anotações</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-dark: #0a0f14;
+            --bg-card: #111821;
+            --bg-card-hover: #1a2530;
+            --primary: #00aaff;
+            --primary-glow: rgba(0, 170, 255, 0.4);
+            --primary-dim: rgba(0, 170, 255, 0.1);
+            --text-main: #e8f1f8;
+            --text-muted: #94a3b8;
+            --border: rgba(0, 170, 255, 0.15);
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* --- Header --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .app-title h1 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: var(--text-main);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--primary-dim);
+        }
+
+        .btn-primary:hover {
+            background: #0088cc;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        /* --- Toolbar --- */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+            min-width: 250px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 14px 14px 48px;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            outline: none;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-dim);
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            max-width: 450px;
+        }
+
+        .tag-pill {
+            padding: 8px 16px;
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+            font-size: 13px;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .tag-pill:hover,
+        .tag-pill.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 170, 255, 0.08);
+        }
+
+        .action-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 12px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+
+
+        .icon-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 700px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6);
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+        }
+
+        .input-title {
+            background: transparent;
+            border: none;
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            width: 100%;
+            outline: none;
+            padding: 0;
+        }
+
+        .input-title::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+        }
+
+        .input-content {
+            flex: 1;
+            background: transparent;
+            border: none;
+            font-size: 16px;
+            color: var(--text-muted);
+            resize: none;
+            outline: none;
+            line-height: 1.8;
+        }
+
+        .input-tags {
+            background: var(--bg-dark);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            color: white;
+            width: 100%;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-tags:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 14px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        /* --- Empty State --- */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 0;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            opacity: 0.2;
+            color: var(--primary);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                gap: 24px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 16px;
+            }
+
+            .action-group {
+                justify-content: space-between;
+            }
+
+            .notes-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-actions {
+                opacity: 1;
+                transform: none;
+            }
+
+            .modal-content {
+                width: 100%;
+                height: 100%;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="app-title">
+                <h1>Anotações</h1>
+            </div>
+            <button class="btn-primary" onclick="NotesApp.openModal()">
+                <i class="fa-solid fa-plus"></i> Nova Nota
+            </button>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" class="search-input" placeholder="Buscar notas por título ou conteúdo..."
+                    oninput="NotesApp.handleSearch(this.value)">
+            </div>
+
+            <div class="filter-tags" id="tags-filter-list">
+                <!-- Generated by JS -->
+            </div>
+
+            <div style="flex: 1"></div>
+
+            <div class="action-group">
+                <button class="action-btn" onclick="NotesApp.exportNotes()">
+                    <i class="fa-solid fa-download"></i> Exportar
+                </button>
+                <button class="action-btn" onclick="document.getElementById('import-file').click()">
+                    <i class="fa-solid fa-upload"></i> Importar
+                </button>
+                <input type="file" id="import-file" hidden accept=".json" onchange="NotesApp.importNotes(event)">
+            </div>
+        </div>
+
+        <!-- Notes Grid -->
+        <div class="notes-grid" id="notes-grid">
+            <!-- Generated by JS -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="note-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Editar Nota</h2>
+                <button onclick="NotesApp.closeModal()"
+                    class="text-gray-400 hover:text-white bg-transparent border-none cursor-pointer transition-colors">
+                    <i class="fa-solid fa-xmark text-2xl"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="note-title" class="input-title" placeholder="Título da nota">
+                <textarea id="note-content" class="input-content"
+                    placeholder="Comece a escrever sua nota aqui..."></textarea>
+                <input type="text" id="note-tags" class="input-tags"
+                    placeholder="Tags (separadas por vírgula, ex: trabalho, ideias)">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="NotesApp.closeModal()">Cancelar</button>
+                <button class="btn-primary" onclick="NotesApp.saveNote()">Salvar Nota</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'zenox_notes_v2';
+
+        const NotesApp = {
+            data: {
+                notes: [],
+                filter: '',
+                activeTag: null,
+                editingId: null
+            },
+
+            init() {
+                this.loadData();
+                this.render();
+            },
+
+            loadData() {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    this.data.notes = JSON.parse(stored);
+                } else {
+                    // Seed initial data
+                    this.data.notes = [
+                        {
+                            id: Date.now(),
+                            title: 'Bem-vindo ao Zenox Notes',
+                            content: 'Este é um exemplo de nota. Você pode criar, editar e excluir notas. Use tags para organizar e a busca para encontrar rapidamente o que precisa.',
+                            tags: ['Tutorial', 'Zenox'],
+                            favorite: true,
+                            updatedAt: new Date().toISOString()
+                        }
+                    ];
+                    this.saveData();
+                }
+            },
+
+            saveData() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data.notes));
+                this.render();
+            },
+
+            render() {
+                this.renderNotes();
+                this.renderTagsFilter();
+            },
+
+            renderNotes() {
+                const grid = document.getElementById('notes-grid');
+                grid.innerHTML = '';
+
+                let filtered = this.data.notes.filter(note => {
+                    const matchesSearch = note.title.toLowerCase().includes(this.data.filter.toLowerCase()) ||
+                        note.content.toLowerCase().includes(this.data.filter.toLowerCase());
+                    const matchesTag = this.data.activeTag ? note.tags.includes(this.data.activeTag) : true;
+                    return matchesSearch && matchesTag;
+                });
+
+                // Sort: Favorites first, then by date desc
+                filtered.sort((a, b) => {
+                    if (a.favorite === b.favorite) {
+                        return new Date(b.updatedAt) - new Date(a.updatedAt);
+                    }
+                    return a.favorite ? -1 : 1;
+                });
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <p>Nenhuma nota encontrada.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                filtered.forEach(note => {
+                    const date = new Date(note.updatedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+                    const html = `
+                        <div class="note-card">
+                            <div class="note-header">
+                                <div>
+                                    <h3 class="note-title">${note.title}</h3>
+                                    <span class="note-date">${date}</span>
+                                </div>
+                                <button class="fav-btn ${note.favorite ? 'active' : ''}" onclick="NotesApp.toggleFavorite(${note.id})">
+                                    <i class="${note.favorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+                                </button>
+                            </div>
+                            <div class="note-preview">
+                                ${note.content}
+                            </div>
+                            <div class="note-footer">
+                                <div class="note-tags">
+                                    ${note.tags.map(t => `<span class="mini-tag">#${t}</span>`).join('')}
+                                </div>
+                                <div class="card-actions">
+                                    <button class="icon-btn" onclick="NotesApp.editNote(${note.id})"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="icon-btn delete" onclick="NotesApp.deleteNote(${note.id})"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.innerHTML += html;
+                });
+            },
+
+            renderTagsFilter() {
+                const container = document.getElementById('tags-filter-list');
+                const allTags = new Set();
+                this.data.notes.forEach(n => n.tags.forEach(t => allTags.add(t)));
+
+                let html = `<div class="tag-pill ${!this.data.activeTag ? 'active' : ''}" onclick="NotesApp.filterByTag(null)">Todas</div>`;
+
+                allTags.forEach(tag => {
+                    html += `<div class="tag-pill ${this.data.activeTag === tag ? 'active' : ''}" onclick="NotesApp.filterByTag('${tag}')">#${tag}</div>`;
+                });
+
+                container.innerHTML = html;
+            },
+
+            handleSearch(query) {
+                this.data.filter = query;
+                this.renderNotes();
+            },
+
+            filterByTag(tag) {
+                this.data.activeTag = tag;
+                this.render();
+            },
+
+            toggleFavorite(id) {
+                const note = this.data.notes.find(n => n.id === id);
+                if (note) {
+                    note.favorite = !note.favorite;
+                    this.saveData();
+                }
+            },
+
+            deleteNote(id) {
+                if (confirm('Tem certeza que deseja excluir esta nota?')) {
+                    this.data.notes = this.data.notes.filter(n => n.id !== id);
+                    this.saveData();
+                }
+            },
+
+            openModal(note = null) {
+                const modal = document.getElementById('note-modal');
+                const titleInput = document.getElementById('note-title');
+                const contentInput = document.getElementById('note-content');
+                const tagsInput = document.getElementById('note-tags');
+                const modalTitle = document.getElementById('modal-title');
+
+                if (note) {
+                    this.data.editingId = note.id;
+                    modalTitle.innerText = 'Editar Nota';
+                    titleInput.value = note.title;
+                    contentInput.value = note.content;
+                    tagsInput.value = note.tags.join(', ');
+                } else {
+                    this.data.editingId = null;
+                    modalTitle.innerText = 'Nova Nota';
+                    titleInput.value = '';
+                    contentInput.value = '';
+                    tagsInput.value = '';
+                }
+
+                modal.classList.add('active');
+            },
+
+            closeModal() {
+                document.getElementById('note-modal').classList.remove('active');
+            },
+
+            editNote(id) {
+                const note = this.data.notes.find(n => n.id === id);
+                if (note) this.openModal(note);
+            },
+
+            saveNote() {
+                const title = document.getElementById('note-title').value.trim();
+                const content = document.getElementById('note-content').value.trim();
+                const tagsStr = document.getElementById('note-tags').value.trim();
+
+                if (!title) return alert('O título é obrigatório.');
+
+                const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
+
+                if (this.data.editingId) {
+                    const note = this.data.notes.find(n => n.id === this.data.editingId);
+                    note.title = title;
+                    note.content = content;
+                    note.tags = tags;
+                    note.updatedAt = new Date().toISOString();
+                } else {
+                    const newNote = {
+                        id: Date.now(),
+                        title,
+                        content,
+                        tags,
+                        favorite: false,
+                        updatedAt: new Date().toISOString()
+                    };
+                    this.data.notes.unshift(newNote);
+                }
+
+                this.saveData();
+                this.closeModal();
+            },
+
+            exportNotes() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.data.notes));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "zenox_notes_backup.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            },
+
+            importNotes(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (Array.isArray(imported)) {
+                            const currentIds = new Set(this.data.notes.map(n => n.id));
+                            const newNotes = imported.filter(n => !currentIds.has(n.id));
+                            this.data.notes = [...newNotes, ...this.data.notes];
+                            this.saveData();
+                            alert(`${newNotes.length} notas importadas com sucesso!`);
+                        } else {
+                            alert('Arquivo inválido.');
+                        }
+                    } catch (err) {
+                        alert('Erro ao ler arquivo JSON.');
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+        };
+
+        NotesApp.init();
+
+    </script>
+</body>
+
+</html>
