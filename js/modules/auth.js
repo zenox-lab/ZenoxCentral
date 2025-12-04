@@ -121,37 +121,40 @@ const AuthModule = {
         const errorDiv = document.getElementById('auth-error');
 
         try {
-            if (!auth) throw new Error("Firebase não inicializado. Verifique as chaves.");
+            if (!supabase) throw new Error("Supabase não inicializado. Verifique as chaves.");
 
+            let error;
             if (this.isLoginMode) {
-                await auth.signInWithEmailAndPassword(email, password);
+                const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+                error = signInError;
             } else {
-                await auth.createUserWithEmailAndPassword(email, password);
+                const { error: signUpError } = await supabase.auth.signUp({ email, password });
+                error = signUpError;
             }
+
+            if (error) throw error;
+
             this.closeModal();
             // Store will handle auth state change
         } catch (error) {
             console.error("Auth Error:", error);
-            errorDiv.textContent = this.getErrorMessage(error.code);
+            errorDiv.textContent = this.getErrorMessage(error.message || error.code);
             errorDiv.classList.remove('hidden');
         }
     },
 
     getErrorMessage(code) {
-        switch (code) {
-            case 'auth/invalid-email': return 'Email inválido.';
-            case 'auth/user-disabled': return 'Usuário desativado.';
-            case 'auth/user-not-found': return 'Usuário não encontrado.';
-            case 'auth/wrong-password': return 'Senha incorreta.';
-            case 'auth/email-already-in-use': return 'Email já está em uso.';
-            case 'auth/weak-password': return 'A senha deve ter pelo menos 6 caracteres.';
-            default: return 'Ocorreu um erro. Tente novamente.';
-        }
+        // Supabase error messages are often plain text, but we can map common ones
+        if (code.includes('Invalid login credentials')) return 'Email ou senha incorretos.';
+        if (code.includes('User already registered')) return 'Email já está em uso.';
+        if (code.includes('Password should be at least')) return 'A senha deve ter pelo menos 6 caracteres.';
+
+        return code || 'Ocorreu um erro. Tente novamente.';
     },
 
-    logout() {
-        if (auth) {
-            auth.signOut();
+    async logout() {
+        if (supabase) {
+            await supabase.auth.signOut();
         }
         localStorage.removeItem('zenox_access_granted');
         window.location.href = 'login.html';

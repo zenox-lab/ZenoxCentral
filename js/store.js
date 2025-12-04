@@ -32,42 +32,50 @@ window.Store = {
         }
 
         return new Promise((resolve) => {
-            // Check if Firebase is initialized
-            if (typeof auth !== 'undefined') {
-                auth.onAuthStateChanged(async (user) => {
-                    if (user) {
-                        this.currentUser = user;
-                        console.log('User logged in:', user.email);
-                        this.setSyncStatus('online'); // Show online status
-                        await this.loadFromFirestore(user.uid);
-
-                        // Update UI button
-                        const btnText = document.getElementById('auth-btn-text');
-                        const btnIcon = document.getElementById('auth-btn-icon');
-                        if (btnText) btnText.textContent = 'Logout';
-                        if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
-                    } else {
-                        this.currentUser = null;
-                        console.log('User logged out');
-                        this.setSyncStatus('offline'); // Show offline status
-                        this.loadFromLocalStorage();
-
-                        // Update UI button
-                        const btnText = document.getElementById('auth-btn-text');
-                        const btnIcon = document.getElementById('auth-btn-icon');
-                        if (btnText) btnText.textContent = 'Login';
-                        if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
-                    }
-                    resolve();
+            if (supabase) {
+                // Check current session
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    this.handleSession(session);
                 });
+
+                // Listen for changes
+                supabase.auth.onAuthStateChange((_event, session) => {
+                    this.handleSession(session);
+                });
+                resolve();
             } else {
-                console.warn('Firebase Auth not available, using LocalStorage only');
+                console.warn('Supabase SDK not loaded, using LocalStorage only');
                 this.setSyncStatus('error');
-                alert("ERRO CRÍTICO: Firebase não foi carregado. Verifique sua conexão.");
                 this.loadFromLocalStorage();
                 resolve();
             }
         });
+    },
+
+    async handleSession(session) {
+        if (session) {
+            this.currentUser = session.user;
+            console.log('User logged in:', session.user.email);
+            this.setSyncStatus('online');
+            await this.loadFromSupabase(session.user.id);
+
+            // Update UI button
+            const btnText = document.getElementById('auth-btn-text');
+            const btnIcon = document.getElementById('auth-btn-icon');
+            if (btnText) btnText.textContent = 'Logout';
+            if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
+        } else {
+            this.currentUser = null;
+            console.log('User logged out');
+            this.setSyncStatus('offline');
+            this.loadFromLocalStorage();
+
+            // Update UI button
+            const btnText = document.getElementById('auth-btn-text');
+            const btnIcon = document.getElementById('auth-btn-icon');
+            if (btnText) btnText.textContent = 'Login';
+            if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
+        }
     },
 
     handleSyncClick() {
@@ -75,12 +83,12 @@ window.Store = {
             alert('Você NÃO está logado. Clique em "Login" no menu para entrar.');
             return;
         }
-        if (typeof db === 'undefined') {
+        if (!supabase) {
             alert('Erro: Banco de dados não conectado.');
             return;
         }
         alert('Tentando forçar sincronização agora...');
-        this.saveToFirestore();
+        this.saveToSupabase();
     },
 
     loadFromLocalStorage() {
@@ -92,20 +100,27 @@ window.Store = {
         }
     },
 
-    async loadFromFirestore(uid) {
+    async loadFromSupabase(uid) {
         try {
-            const doc = await db.collection('users').doc(uid).get();
-            if (doc.exists) {
-                this.state = doc.data();
+            const { data, error } = await supabase
+                .from('user_data')
+                .select('data')
+                .eq('user_id', uid)
+                .single();
+
+            if (data && data.data) {
+                this.state = data.data;
                 this.runMigrations();
-                console.log('Data loaded from Firestore');
-            } else {
-                console.log('No data in Firestore, migrating LocalStorage...');
+                console.log('Data loaded from Supabase');
+            } else if (error && (error.code === 'PGRST116' || error.details?.includes('0 rows'))) { // No rows found
+                console.log('No data in Supabase, migrating LocalStorage...');
                 this.loadFromLocalStorage(); // Load local first
-                this.saveToFirestore(); // Then upload to cloud
+                this.saveToSupabase(); // Then upload to cloud
+            } else {
+                throw error;
             }
         } catch (error) {
-            console.error('Error loading from Firestore:', error);
+            console.error('Error loading from Supabase:', error);
             this.loadFromLocalStorage(); // Fallback
         }
     },
@@ -163,53 +178,49 @@ window.Store = {
         // Save to LocalStorage (Always backup)
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
 
-        // Save to Firestore (Debounced)
+        // Save to Supabase (Debounced)
         if (this.currentUser) {
-            if (typeof db !== 'undefined') {
+            if (supabase) {
                 this.setSyncStatus('saving');
                 clearTimeout(this.saveTimeout);
                 this.saveTimeout = setTimeout(() => {
-                    this.saveToFirestore();
+                    this.saveToSupabase();
                 }, 1000); // 1s debounce
             } else {
-                console.error("Firestore DB not initialized");
+                console.error("Supabase DB not initialized");
                 this.setSyncStatus('error');
             }
         }
     },
 
-    async saveToFirestore() {
+    async saveToSupabase() {
         if (!this.currentUser) {
             if (window.logToScreen) window.logToScreen('Tentativa de salvar sem usuário logado', 'error');
             return;
         }
 
-        if (window.logToScreen) window.logToScreen('Iniciando salvamento no Firestore...', 'info');
+        if (window.logToScreen) window.logToScreen('Iniciando salvamento no Supabase...', 'info');
         this.setSyncStatus('saving');
-
-        // Create a timeout promise
-        const timeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout: Conexão lenta ou bloqueada (60s)")), 60000)
-        );
 
         try {
             if (window.logToScreen) window.logToScreen('Enviando dados...', 'info');
 
-            // Race between save and timeout
-            await Promise.race([
-                db.collection('users').doc(this.currentUser.uid).set(this.state, { merge: true }),
-                timeout
-            ]);
+            const { error } = await supabase
+                .from('user_data')
+                .upsert({
+                    user_id: this.currentUser.id,
+                    data: this.state
+                });
 
-            console.log('Data saved to Firestore');
+            if (error) throw error;
+
+            console.log('Data saved to Supabase');
             if (window.logToScreen) window.logToScreen('SUCESSO: Dados salvos na nuvem!', 'success');
             this.setSyncStatus('saved');
         } catch (error) {
-            console.error('Error saving to Firestore:', error);
+            console.error('Error saving to Supabase:', error);
             if (window.logToScreen) window.logToScreen(`ERRO: ${error.message} (${error.code || 'N/A'})`, 'error');
             this.setSyncStatus('error');
-            // Alert removed to avoid disrupting user experience on slow connections
-            // alert(`ERRO AO SALVAR:\n${error.message}\n\nCódigo: ${error.code || 'N/A'}`);
         }
     },
 
