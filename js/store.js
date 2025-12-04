@@ -139,12 +139,17 @@ window.Store = {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
 
         // Save to Firestore (Debounced)
-        if (this.currentUser && typeof db !== 'undefined') {
-            this.setSyncStatus('saving');
-            clearTimeout(this.saveTimeout);
-            this.saveTimeout = setTimeout(() => {
-                this.saveToFirestore();
-            }, 1000); // 1s debounce
+        if (this.currentUser) {
+            if (typeof db !== 'undefined') {
+                this.setSyncStatus('saving');
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = setTimeout(() => {
+                    this.saveToFirestore();
+                }, 1000); // 1s debounce
+            } else {
+                console.error("Firestore DB not initialized");
+                this.setSyncStatus('error');
+            }
         }
     },
 
@@ -157,12 +162,26 @@ window.Store = {
         } catch (error) {
             console.error('Error saving to Firestore:', error);
             this.setSyncStatus('error');
+            // Optional: Alert user on persistent failure
+            // alert('Erro ao sincronizar dados: ' + error.message);
         }
     },
 
     setSyncStatus(status) {
         const el = document.getElementById('sync-status');
         if (!el) return;
+
+        // Make clickable to retry
+        el.onclick = () => {
+            if (this.currentUser) {
+                alert('Forçando sincronização...');
+                this.saveToFirestore();
+            } else {
+                alert('Você precisa estar logado para sincronizar.');
+            }
+        };
+        el.style.cursor = 'pointer';
+        el.title = 'Clique para forçar sincronização';
 
         if (status === 'saving') {
             el.innerHTML = '<i class="fa-solid fa-cloud-arrow-up animate-bounce"></i> <span class="text-xs">Salvando...</span>';
