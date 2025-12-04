@@ -23,6 +23,14 @@ window.Store = {
     },
 
     async init() {
+        // Attach Sync Listener immediately
+        const syncEl = document.getElementById('sync-status');
+        if (syncEl) {
+            syncEl.style.cursor = 'pointer';
+            syncEl.onclick = () => this.handleSyncClick();
+            syncEl.innerHTML = '<i class="fa-solid fa-cloud text-gray-400"></i>'; // Default state
+        }
+
         return new Promise((resolve) => {
             // Check if Firebase is initialized
             if (typeof auth !== 'undefined') {
@@ -30,6 +38,7 @@ window.Store = {
                     if (user) {
                         this.currentUser = user;
                         console.log('User logged in:', user.email);
+                        this.setSyncStatus('online'); // Show online status
                         await this.loadFromFirestore(user.uid);
 
                         // Update UI button
@@ -40,6 +49,7 @@ window.Store = {
                     } else {
                         this.currentUser = null;
                         console.log('User logged out');
+                        this.setSyncStatus('offline'); // Show offline status
                         this.loadFromLocalStorage();
 
                         // Update UI button
@@ -52,10 +62,25 @@ window.Store = {
                 });
             } else {
                 console.warn('Firebase Auth not available, using LocalStorage only');
+                this.setSyncStatus('error');
+                alert("ERRO CRÍTICO: Firebase não foi carregado. Verifique sua conexão.");
                 this.loadFromLocalStorage();
                 resolve();
             }
         });
+    },
+
+    handleSyncClick() {
+        if (!this.currentUser) {
+            alert('Você NÃO está logado. Clique em "Login" no menu para entrar.');
+            return;
+        }
+        if (typeof db === 'undefined') {
+            alert('Erro: Banco de dados não conectado.');
+            return;
+        }
+        alert('Tentando forçar sincronização agora...');
+        this.saveToFirestore();
     },
 
     loadFromLocalStorage() {
@@ -170,17 +195,10 @@ window.Store = {
         const el = document.getElementById('sync-status');
         if (!el) return;
 
-        // Make clickable to retry
-        el.onclick = () => {
-            if (this.currentUser) {
-                alert('Forçando sincronização...');
-                this.saveToFirestore();
-            } else {
-                alert('Você precisa estar logado para sincronizar.');
-            }
-        };
+        // Ensure click listener is preserved (though init sets it, this is safe)
+        el.onclick = () => this.handleSyncClick();
         el.style.cursor = 'pointer';
-        el.title = 'Clique para forçar sincronização';
+        el.title = 'Clique para verificar status';
 
         if (status === 'saving') {
             el.innerHTML = '<i class="fa-solid fa-cloud-arrow-up animate-bounce"></i> <span class="text-xs">Salvando...</span>';
@@ -189,11 +207,17 @@ window.Store = {
             el.innerHTML = '<i class="fa-solid fa-cloud-check"></i> <span class="text-xs">Salvo</span>';
             el.className = 'flex items-center gap-2 text-emerald-500';
             setTimeout(() => {
-                el.innerHTML = ''; // Clear after 3s
+                this.setSyncStatus('online'); // Revert to online state
             }, 3000);
         } else if (status === 'error') {
-            el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span class="text-xs">Erro ao Salvar</span>';
+            el.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span class="text-xs">Erro</span>';
             el.className = 'flex items-center gap-2 text-red-500';
+        } else if (status === 'online') {
+            el.innerHTML = '<i class="fa-solid fa-wifi"></i> <span class="text-xs">Online</span>';
+            el.className = 'flex items-center gap-2 text-blue-500';
+        } else if (status === 'offline') {
+            el.innerHTML = '<i class="fa-solid fa-user-slash"></i> <span class="text-xs">Offline</span>';
+            el.className = 'flex items-center gap-2 text-gray-500';
         }
     },
 
