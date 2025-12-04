@@ -272,6 +272,7 @@ window.HabitsModule = {
     },
 
     renderWellnessChart() {
+        if (typeof Chart === 'undefined') return;
         const ctx = document.getElementById('wellnessChart');
         if (!ctx) return;
 

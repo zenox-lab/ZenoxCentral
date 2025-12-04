@@ -18,7 +18,8 @@ window.Store = {
         banks: {
             nubank: { balance: 0, invested: 0 },
             mercadoPago: { balance: 0, invested: 0 }
-        }
+        },
+        dailyMetrics: {}
     },
 
     async init() {
