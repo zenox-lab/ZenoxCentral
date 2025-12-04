@@ -180,14 +180,25 @@ window.Store = {
 
     async saveToFirestore() {
         if (!this.currentUser) return;
+
+        // Create a timeout promise
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Tempo limite excedido (10s). Verifique sua conexão.")), 10000)
+        );
+
         try {
-            await db.collection('users').doc(this.currentUser.uid).set(this.state, { merge: true });
+            // Race between save and timeout
+            await Promise.race([
+                db.collection('users').doc(this.currentUser.uid).set(this.state, { merge: true }),
+                timeout
+            ]);
+
             console.log('Data saved to Firestore');
             this.setSyncStatus('saved');
         } catch (error) {
             console.error('Error saving to Firestore:', error);
             this.setSyncStatus('error');
-            alert(`ERRO AO SALVAR NO FIREBASE:\nCódigo: ${error.code}\nMensagem: ${error.message}\n\nVerifique se as Regras do Firestore estão liberadas.`);
+            alert(`ERRO AO SALVAR:\n${error.message}\n\nCódigo: ${error.code || 'N/A'}`);
         }
     },
 
