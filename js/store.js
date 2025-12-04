@@ -162,8 +162,7 @@ window.Store = {
         } catch (error) {
             console.error('Error saving to Firestore:', error);
             this.setSyncStatus('error');
-            // Optional: Alert user on persistent failure
-            // alert('Erro ao sincronizar dados: ' + error.message);
+            alert(`ERRO AO SALVAR NO FIREBASE:\nCódigo: ${error.code}\nMensagem: ${error.message}\n\nVerifique se as Regras do Firestore estão liberadas.`);
         }
     },
 
