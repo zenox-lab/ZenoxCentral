@@ -1,38 +1,34 @@
 const AuthModule = {
-    render() {
+    renderContent() {
         return `
-            <div id="auth-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity opacity-0">
-                <div class="bg-white dark:bg-zenox-surface rounded-2xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-white/10" id="auth-modal-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white" id="auth-title">Login</h3>
-                        <button onclick="AuthModule.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                            <i class="fa-solid fa-xmark text-xl"></i>
-                        </button>
-                    </div>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white" id="auth-title">Login</h3>
+                <button onclick="AuthModule.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
 
-                    <form id="auth-form" onsubmit="AuthModule.handleSubmit(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                            <input type="email" name="email" required class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-gray-800 dark:text-white focus:outline-none focus:border-zenox-primary focus:ring-1 focus:ring-zenox-primary transition-all">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha</label>
-                            <input type="password" name="password" required class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-gray-800 dark:text-white focus:outline-none focus:border-zenox-primary focus:ring-1 focus:ring-zenox-primary transition-all">
-                        </div>
-
-                        <div id="auth-error" class="hidden text-sm text-red-500 bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/20"></div>
-
-                        <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-zenox-primary hover:bg-zenox-primary/90 text-white rounded-xl font-bold shadow-lg shadow-zenox-primary/20 transition-all flex items-center justify-center gap-2">
-                            <span>Entrar</span>
-                            <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </form>
-
-                    <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                        <span id="auth-switch-text">Não tem uma conta?</span>
-                        <button onclick="AuthModule.toggleMode()" class="text-zenox-primary font-bold hover:underline ml-1" id="auth-switch-btn">Criar conta</button>
-                    </div>
+            <form id="auth-form" onsubmit="AuthModule.handleSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                    <input type="email" name="email" required class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-gray-800 dark:text-white focus:outline-none focus:border-zenox-primary focus:ring-1 focus:ring-zenox-primary transition-all">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha</label>
+                    <input type="password" name="password" required class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-gray-800 dark:text-white focus:outline-none focus:border-zenox-primary focus:ring-1 focus:ring-zenox-primary transition-all">
+                </div>
+
+                <div id="auth-error" class="hidden text-sm text-red-500 bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/20"></div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-zenox-primary hover:bg-zenox-primary/90 text-white rounded-xl font-bold shadow-lg shadow-zenox-primary/20 transition-all flex items-center justify-center gap-2">
+                    <span>Entrar</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                <span id="auth-switch-text">Não tem uma conta?</span>
+                <button onclick="AuthModule.toggleMode()" class="text-zenox-primary font-bold hover:underline ml-1" id="auth-switch-btn">Criar conta</button>
             </div>
         `;
     },
@@ -42,7 +38,12 @@ const AuthModule = {
     openModal() {
         const modal = document.getElementById('auth-modal');
         const content = document.getElementById('auth-modal-content');
+
         if (modal && content) {
+            // Inject content
+            content.innerHTML = this.renderContent();
+            this.isLoginMode = true; // Reset to login mode
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(() => {
@@ -50,12 +51,6 @@ const AuthModule = {
                 content.classList.remove('scale-95');
                 content.classList.add('scale-100');
             }, 10);
-        } else {
-            // If modal not in DOM, append it
-            const div = document.createElement('div');
-            div.innerHTML = this.render();
-            document.body.appendChild(div.firstElementChild);
-            this.openModal();
         }
     },
 
@@ -69,6 +64,7 @@ const AuthModule = {
             setTimeout(() => {
                 modal.classList.remove('flex');
                 modal.classList.add('hidden');
+                content.innerHTML = ''; // Clear content
             }, 300);
         }
     },
