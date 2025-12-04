@@ -52,111 +52,158 @@
                         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
                     }
                 }
-                    < div id="sidebar-overlay" onclick="toggleMobileMenu()"
-        class= "fixed inset-0 bg-black/50 z-30 hidden md:hidden glass" ></div>
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        // Access Control Check
+        if (!localStorage.getItem('zenox_access_granted')) {
+            window.location.href = 'login.html';
+        }
+
+        // Theme Initialization
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            if (metaThemeColor) metaThemeColor.setAttribute('content', '#f3f4f6');
+        } else {
+            document.documentElement.classList.add('dark');
+            if (metaThemeColor) metaThemeColor.setAttribute('content', '#09090b');
+        }
+    </script>
+</head>
+
+<body
+    class="bg-gray-100 dark:bg-zenox-bg text-zinc-900 dark:text-gray-200 font-sans antialiased overflow-hidden h-screen flex transition-colors duration-300">
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div id="sidebar-overlay" onclick="toggleMobileMenu()"
+        class="fixed inset-0 bg-black/50 z-30 hidden md:hidden glass"></div>
 
     <!-- Sidebar -->
     <aside id="sidebar"
         class="fixed md:static inset-y-0 left-0 w-72 bg-white dark:bg-zenox-surface border-r border-gray-200 dark:border-white/5 flex flex-col transition-transform duration-300 z-40 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
 
         <!-- Logo -->
-        <i class="fa-solid fa-grid-2 text-base group-hover:text-zenox-primary transition-colors"></i>
-        <span class="text-sm font-medium">Dashboard</span>
-        </button>
-
-        <!-- Trade Diary Group-- >
-        <div class="space-y-1">
-            <button onclick="toggleTradingMenu()" id="trading-menu-btn"
-                class="nav-item w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all group">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-chart-candlestick text-base group-hover:text-blue-500 transition-colors"></i>
-                    <span class="text-sm font-medium">Diário de Trade</span>
+        <div class="h-20 flex items-center px-8 border-b border-gray-200 dark:border-white/5">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-zenox-primary to-zenox-secondary flex items-center justify-center shadow-neon">
+                    <i class="fa-solid fa-bolt text-white text-sm"></i>
                 </div>
-                <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300" id="trading-chevron"></i>
-            </button>
-
-            <!-- Submenu -->
-            <div id="trading-submenu" class="hidden pl-4 space-y-1">
-                <button onclick="router.navigate('trades'); toggleMobileMenu(false)" data-target="trades"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all">
-                    <i class="fa-regular fa-calendar text-base"></i>
-                    <span>Diário</span>
-                </button>
-
-                <button onclick="router.navigate('equity'); toggleMobileMenu(false)" data-target="equity"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all">
-                    <i class="fa-solid fa-arrow-trend-up text-base"></i>
-                    <span>Patrimônio</span>
-                </button>
-
-                <button onclick="router.navigate('analysis'); toggleMobileMenu(false)" data-target="analysis"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-purple-500 dark:hover:text-purple-400 transition-all">
-                    <i class="fa-solid fa-chart-pie text-base"></i>
-                    <span>Análise</span>
-                </button>
-
-                <button onclick="router.navigate('wallet'); toggleMobileMenu(false)" data-target="wallet"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-orange-500 dark:hover:text-orange-400 transition-all">
-                    <i class="fa-solid fa-briefcase text-base"></i>
-                    <span>Carteira</span>
-                </button>
-
-                <button onclick="router.navigate('strategies'); toggleMobileMenu(false)" data-target="strategies"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-accent dark:hover:text-white transition-all">
-                    <i class="fa-solid fa-bullseye text-base"></i>
-                    <span>Estratégias</span>
-                </button>
-
-                <button onclick="router.navigate('checklist'); toggleMobileMenu(false)" data-target="checklist"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-pink-500 dark:hover:text-pink-400 transition-all">
-                    <i class="fa-solid fa-list-check text-base"></i>
-                    <span>Checklist</span>
-                </button>
+                <span class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">ZENOX</span>
             </div>
+            <!-- Sync Status Indicator -->
+            <div id="sync-status" class="ml-auto text-xs"></div>
         </div>
 
-        <button onclick="router.navigate('expenses'); toggleMobileMenu(false)"
-            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-warning dark:hover:text-white transition-all group"
-            data-target="expenses">
-            <i class="fa-solid fa-wallet text-base group-hover:text-zenox-warning transition-colors"></i>
-            <span class="text-sm font-medium">Financeiro</span>
-        </button>
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            <button onclick="router.navigate('dashboard'); toggleMobileMenu(false)"
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group active"
+                data-target="dashboard">
+                <i class="fa-solid fa-grid-2 text-base group-hover:text-zenox-primary transition-colors"></i>
+                <span class="text-sm font-medium">Dashboard</span>
+            </button>
 
-        <button onclick="router.navigate('habits'); toggleMobileMenu(false)"
-            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-success dark:hover:text-white transition-all group"
-            data-target="habits">
-            <i class="fa-solid fa-check-double text-base group-hover:text-zenox-success transition-colors"></i>
-            <span class="text-sm font-medium">Hábitos</span>
-        </button>
-
-        <button onclick="router.navigate('notes'); toggleMobileMenu(false)"
-            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-secondary dark:hover:text-white transition-all group"
-            data-target="notes">
-            <i class="fa-solid fa-note-sticky text-base group-hover:text-zenox-secondary transition-colors"></i>
-            <span class="text-sm font-medium">Anotações</span>
-        </button>
-        </nav >
-
-        < !--Sidebar Footer-- >
-            <div class="p-4 border-t border-gray-200 dark:border-white/5 space-y-2">
-                <!-- Theme Toggle -->
-                <button onclick="toggleTheme()"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
-                    <i class="fa-regular fa-moon dark:hidden text-base w-5 text-center"></i>
-                    <i class="fa-regular fa-sun hidden dark:block text-base w-5 text-center"></i>
-                    <span class="text-sm font-medium">Alternar Tema</span>
+            <!-- Trade Diary Group -->
+            <div class="space-y-1">
+                <button onclick="toggleTradingMenu()" id="trading-menu-btn"
+                    class="nav-item w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all group">
+                    <div class="flex items-center gap-3">
+                        <i
+                            class="fa-solid fa-chart-candlestick text-base group-hover:text-blue-500 transition-colors"></i>
+                        <span class="text-sm font-medium">Diário de Trade</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300"
+                        id="trading-chevron"></i>
                 </button>
 
-                <!-- Auth Button -->
-                <button onclick="AuthModule.handleAuthClick()" id="auth-btn"
-                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
-                    <i id="auth-btn-icon" class="fa-solid fa-right-to-bracket text-base w-5 text-center"></i>
-                    <span id="auth-btn-text" class="text-sm font-medium">Login</span>
-                </button>
+                <!-- Submenu -->
+                <div id="trading-submenu" class="hidden pl-4 space-y-1">
+                    <button onclick="router.navigate('trades'); toggleMobileMenu(false)" data-target="trades"
+                        class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all">
+                        <i class="fa-regular fa-calendar text-base"></i>
+                        <span>Diário</span>
+                    </button>
+
+                    <button onclick="router.navigate('equity'); toggleMobileMenu(false)" data-target="equity"
+                        class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all">
+                        <i class="fa-solid fa-arrow-trend-up text-base"></i>
+                        <span>Patrimônio</span>
+                    </button>
+
+                    <button onclick="router.navigate('analysis'); toggleMobileMenu(false)" data-target="analysis"
+                        class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-purple-500 dark:hover:text-purple-400 transition-all">
+                        <i class="fa-solid fa-chart-pie text-base"></i>
+                        <span>Análise</span>
+                    </button>
+
+                    <button onclick="router.navigate('wallet'); toggleMobileMenu(false)" data-target="wallet"
+                        class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-orange-500 dark:hover:text-orange-400 transition-all">
+                        <i class="fa-solid fa-briefcase text-base"></i>
+                        <span>Carteira</span>
+                    </button>
+
+                    <button onclick="router.navigate('strategies'); toggleMobileMenu(false)" data-target="strategies"
+                        class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-accent dark:hover:text-white transition-all">
+                        <i class="fa-solid fa-bullseye text-base"></i>
+                        <span>Estratégias</span>
+                    </button>
+
+                    <button onclick="router.navigate('checklist'); toggleMobileMenu(false)" data-target="checklist"
+                        class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-pink-500 dark:hover:text-pink-400 transition-all">
+                        <i class="fa-solid fa-list-check text-base"></i>
+                        <span>Checklist</span>
+                    </button>
+                </div>
             </div>
-    </aside >
 
-    < !--Main Content-- >
+            <button onclick="router.navigate('expenses'); toggleMobileMenu(false)"
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-warning dark:hover:text-white transition-all group"
+                data-target="expenses">
+                <i class="fa-solid fa-wallet text-base group-hover:text-zenox-warning transition-colors"></i>
+                <span class="text-sm font-medium">Financeiro</span>
+            </button>
+
+            <button onclick="router.navigate('habits'); toggleMobileMenu(false)"
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-success dark:hover:text-white transition-all group"
+                data-target="habits">
+                <i class="fa-solid fa-check-double text-base group-hover:text-zenox-success transition-colors"></i>
+                <span class="text-sm font-medium">Hábitos</span>
+            </button>
+
+            <button onclick="router.navigate('notes'); toggleMobileMenu(false)"
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-secondary dark:hover:text-white transition-all group"
+                data-target="notes">
+                <i class="fa-solid fa-note-sticky text-base group-hover:text-zenox-secondary transition-colors"></i>
+                <span class="text-sm font-medium">Anotações</span>
+            </button>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-gray-200 dark:border-white/5 space-y-2">
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()"
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
+                <i class="fa-regular fa-moon dark:hidden text-base w-5 text-center"></i>
+                <i class="fa-regular fa-sun hidden dark:block text-base w-5 text-center"></i>
+                <span class="text-sm font-medium">Alternar Tema</span>
+            </button>
+
+            <!-- Auth Button -->
+            <button onclick="AuthModule.handleAuthClick()" id="auth-btn"
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
+                <i id="auth-btn-icon" class="fa-solid fa-right-to-bracket text-base w-5 text-center"></i>
+                <span id="auth-btn-text" class="text-sm font-medium">Login</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
         <!-- Top Bar (Removed as requested) -->
 
@@ -166,7 +213,7 @@
         </div>
     </main>
 
-    <!--Auth Modal-- >
+    <!-- Auth Modal -->
     <div id="auth-modal"
         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300">
         <div id="auth-modal-content"
@@ -175,8 +222,8 @@
         </div>
     </div>
 
-    <!--Firebase SDKs-- >
-            <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
@@ -202,18 +249,18 @@
 
     <!-- Service Worker Registration -->
     <script>
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .then(registration => {
-                            console.log('ServiceWorker registration successful');
-                        })
-                        .catch(err => {
-                            console.log('ServiceWorker registration failed: ', err);
-                        });
-                });
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
         }
     </script>
-    </body>
+</body>
 
 </html>
