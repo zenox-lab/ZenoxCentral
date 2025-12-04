@@ -225,14 +225,41 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    .then(registration => {
-    console.log('ServiceWorker registration successful');
-    })
-    .catch(err => {
-    console.log('ServiceWorker registration failed: ', err);
-    });
-    });
-    }
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Config & Scripts -->
+    <script src="js/firebase-config.js?v=1.1"></script>
+    <script src="js/store.js?v=1.1"></script>
+    <script src="js/modules/auth.js?v=1.1"></script>
+    <script src="js/modules/dashboard.js?v=1.1"></script>
+    <script src="js/modules/trades.js?v=1.1"></script>
+    <script src="js/modules/equity.js?v=1.1"></script>
+    <script src="js/modules/analysis.js?v=1.1"></script>
+    <script src="js/modules/expenses.js?v=1.1"></script>
+    <script src="js/modules/habits.js?v=1.1"></script>
+    <script src="js/modules/notes.js?v=1.1"></script>
+    <script src="js/modules/strategies.js?v=1.1"></script>
+    <script src="js/modules/checklist.js?v=1.1"></script>
+    <script src="js/modules/wallet.js?v=1.1"></script>
+    <script src="js/data/marketData.js?v=1.1"></script>
+    <script src="js/app.js?v=1.1"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
     </script>
 </body>
 
