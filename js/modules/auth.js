@@ -1,34 +1,58 @@
 const AuthModule = {
     renderContent() {
         return `
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white" id="auth-title">Login</h3>
-                <button onclick="AuthModule.closeModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-
-            <form id="auth-form" onsubmit="AuthModule.handleSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                    <input type="email" name="email" required class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-gray-800 dark:text-white focus:outline-none focus:border-zenox-primary focus:ring-1 focus:ring-zenox-primary transition-all">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha</label>
-                    <input type="password" name="password" required class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-4 py-2.5 text-gray-800 dark:text-white focus:outline-none focus:border-zenox-primary focus:ring-1 focus:ring-zenox-primary transition-all">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-zenox-primary to-zenox-secondary flex items-center justify-center shadow-lg shadow-zenox-primary/20">
+                            <i class="fa-solid fa-user text-white text-lg"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-800 dark:text-white tracking-tight" id="auth-title">Login</h3>
+                    </div>
+                    <button onclick="AuthModule.closeModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-600 dark:hover:text-white transition-all">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
                 </div>
 
-                <div id="auth-error" class="hidden text-sm text-red-500 bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/20"></div>
+                <form id="auth-form" onsubmit="AuthModule.handleSubmit(event)" class="space-y-5">
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1">Email</label>
+                        <div class="relative group">
+                            <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-zenox-primary transition-colors"></i>
+                            <input type="email" name="email" required placeholder="seu@email.com" 
+                                class="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl pl-11 pr-4 py-3 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-zenox-primary focus:ring-2 focus:ring-zenox-primary/20 transition-all">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 ml-1">Senha</label>
+                        <div class="relative group">
+                            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-zenox-primary transition-colors"></i>
+                            <input type="password" name="password" required placeholder="••••••••" 
+                                class="w-full bg-gray-50 dark:bg-black/40 border border-gray-200 dark:border-white/10 rounded-xl pl-11 pr-4 py-3 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:border-zenox-primary focus:ring-2 focus:ring-zenox-primary/20 transition-all">
+                        </div>
+                    </div>
 
-                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-zenox-primary hover:bg-zenox-primary/90 text-white rounded-xl font-bold shadow-lg shadow-zenox-primary/20 transition-all flex items-center justify-center gap-2">
-                    <span>Entrar</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
+                    <div id="auth-error" class="hidden text-sm text-red-500 bg-red-50 dark:bg-red-500/10 p-4 rounded-xl border border-red-100 dark:border-red-500/20 flex items-center gap-3">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="auth-error-msg">Erro</span>
+                    </div>
 
-            <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                <span id="auth-switch-text">Não tem uma conta?</span>
-                <button onclick="AuthModule.toggleMode()" class="text-zenox-primary font-bold hover:underline ml-1" id="auth-switch-btn">Criar conta</button>
+                    <button type="submit" id="auth-submit-btn" 
+                        class="w-full py-3.5 bg-gradient-to-r from-zenox-primary to-zenox-secondary hover:from-cyan-400 hover:to-violet-400 text-white rounded-xl font-bold shadow-lg shadow-zenox-primary/25 hover:shadow-zenox-primary/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-base">
+                        <span>Entrar</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <div class="mt-8 text-center">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2" id="auth-switch-text">Não tem uma conta?</p>
+                    <button onclick="AuthModule.toggleMode()" 
+                        class="text-sm font-bold text-zenox-primary hover:text-zenox-secondary transition-colors border border-zenox-primary/20 hover:border-zenox-primary/50 rounded-lg px-4 py-2" 
+                        id="auth-switch-btn">
+                        Criar conta gratuitamente
+                    </button>
+                </div>
             </div>
         `;
     },
