@@ -189,7 +189,7 @@ window.Store = {
 
         // Create a timeout promise
         const timeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout: Conexão lenta ou bloqueada (30s)")), 30000)
+            setTimeout(() => reject(new Error("Timeout: Conexão lenta ou bloqueada (60s)")), 60000)
         );
 
         try {
@@ -208,7 +208,8 @@ window.Store = {
             console.error('Error saving to Firestore:', error);
             if (window.logToScreen) window.logToScreen(`ERRO: ${error.message} (${error.code || 'N/A'})`, 'error');
             this.setSyncStatus('error');
-            alert(`ERRO AO SALVAR:\n${error.message}\n\nCódigo: ${error.code || 'N/A'}`);
+            // Alert removed to avoid disrupting user experience on slow connections
+            // alert(`ERRO AO SALVAR:\n${error.message}\n\nCódigo: ${error.code || 'N/A'}`);
         }
     },
 
