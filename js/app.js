@@ -134,12 +134,16 @@ window.toggleMobileMenu = function (forceClose = null) {
 
 window.toggleTheme = function () {
     const html = document.documentElement;
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+
     if (html.classList.contains('dark')) {
         html.classList.remove('dark');
         localStorage.setItem('theme', 'light');
+        if (metaThemeColor) metaThemeColor.setAttribute('content', '#f3f4f6'); // gray-100
     } else {
         html.classList.add('dark');
         localStorage.setItem('theme', 'dark');
+        if (metaThemeColor) metaThemeColor.setAttribute('content', '#09090b'); // zenox-bg
     }
 };
 
