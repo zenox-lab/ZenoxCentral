@@ -225,41 +225,14 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Config & Scripts -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/store.js"></script>
-    <script src="js/modules/auth.js"></script>
-    <script src="js/modules/dashboard.js"></script>
-    <script src="js/modules/trades.js"></script>
-    <script src="js/modules/equity.js"></script>
-    <script src="js/modules/analysis.js"></script>
-    <script src="js/modules/expenses.js"></script>
-    <script src="js/modules/habits.js"></script>
-    <script src="js/modules/notes.js"></script>
-    <script src="js/modules/strategies.js"></script>
-    <script src="js/modules/checklist.js"></script>
-    <script src="js/modules/wallet.js"></script>
-    <script src="js/data/marketData.js"></script>
-    <script src="js/app.js"></script>
-
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful');
-                    })
-                    .catch(err => {
-                        console.log('ServiceWorker registration failed: ', err);
-                    });
-            });
-        }
+    .then(registration => {
+    console.log('ServiceWorker registration successful');
+    })
+    .catch(err => {
+    console.log('ServiceWorker registration failed: ', err);
+    });
+    });
+    }
     </script>
 </body>
 
