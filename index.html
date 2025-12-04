@@ -222,6 +222,17 @@
         </div>
     </div>
 
+    <!-- Debug Console -->
+    <div id="debug-console"
+        class="fixed bottom-0 right-0 w-full md:w-96 h-48 bg-black/90 text-green-400 font-mono text-xs p-4 overflow-y-auto z-50 border-t border-green-500/30 hidden">
+        <div class="flex justify-between items-center mb-2 border-b border-green-500/30 pb-1">
+            <span class="font-bold">SYSTEM LOGS</span>
+            <button onclick="document.getElementById('debug-console').classList.add('hidden')"
+                class="text-red-400 hover:text-red-300">CLOSE</button>
+        </div>
+        <div id="debug-logs" class="space-y-1"></div>
+    </div>
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -231,24 +242,38 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Config & Scripts -->
-    <script src="js/firebase-config.js?v=1.1"></script>
-    <script src="js/store.js?v=1.1"></script>
-    <script src="js/modules/auth.js?v=1.1"></script>
-    <script src="js/modules/dashboard.js?v=1.1"></script>
-    <script src="js/modules/trades.js?v=1.1"></script>
-    <script src="js/modules/equity.js?v=1.1"></script>
-    <script src="js/modules/analysis.js?v=1.1"></script>
-    <script src="js/modules/expenses.js?v=1.1"></script>
-    <script src="js/modules/habits.js?v=1.1"></script>
-    <script src="js/modules/notes.js?v=1.1"></script>
-    <script src="js/modules/strategies.js?v=1.1"></script>
-    <script src="js/modules/checklist.js?v=1.1"></script>
-    <script src="js/modules/wallet.js?v=1.1"></script>
-    <script src="js/data/marketData.js?v=1.1"></script>
-    <script src="js/app.js?v=1.1"></script>
+    <script src="js/firebase-config.js?v=1.2"></script>
+    <script src="js/store.js?v=1.2"></script>
+    <script src="js/modules/auth.js?v=1.2"></script>
+    <script src="js/modules/dashboard.js?v=1.2"></script>
+    <script src="js/modules/trades.js?v=1.2"></script>
+    <script src="js/modules/equity.js?v=1.2"></script>
+    <script src="js/modules/analysis.js?v=1.2"></script>
+    <script src="js/modules/expenses.js?v=1.2"></script>
+    <script src="js/modules/habits.js?v=1.2"></script>
+    <script src="js/modules/notes.js?v=1.2"></script>
+    <script src="js/modules/strategies.js?v=1.2"></script>
+    <script src="js/modules/checklist.js?v=1.2"></script>
+    <script src="js/modules/wallet.js?v=1.2"></script>
+    <script src="js/data/marketData.js?v=1.2"></script>
+    <script src="js/app.js?v=1.2"></script>
 
     <!-- Service Worker Registration -->
     <script>
+        // Global Debug Logger
+        window.logToScreen = (msg, type = 'info') => {
+            const consoleEl = document.getElementById('debug-console');
+            const logsEl = document.getElementById('debug-logs');
+            if (consoleEl && logsEl) {
+                consoleEl.classList.remove('hidden');
+                const color = type === 'error' ? 'text-red-400' : (type === 'success' ? 'text-blue-400' : 'text-green-400');
+                const time = new Date().toLocaleTimeString();
+                logsEl.innerHTML += `<div class="${color}">[${time}] ${msg}</div>`;
+                logsEl.scrollTop = logsEl.scrollHeight;
+            }
+            console.log(`[${type.toUpperCase()}] ${msg}`);
+        };
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
