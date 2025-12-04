@@ -189,7 +189,7 @@ window.Store = {
 
         // Create a timeout promise
         const timeout = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout: Conexão lenta ou bloqueada (10s)")), 10000)
+            setTimeout(() => reject(new Error("Timeout: Conexão lenta ou bloqueada (30s)")), 30000)
         );
 
         try {
