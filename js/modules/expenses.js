@@ -7,6 +7,7 @@ window.ExpensesModule = {
         chartScope: 'monthly', // 'weekly', 'monthly', 'annual'
         activeTab: 'Todos', // 'Todos', 'Fixa', 'Variável', 'Extra', 'Adicional'
         listTab: 'expenses', // 'expenses', 'income', 'investments'
+        investmentFilter: 'month', // 'month', 'all'
         isCategoryManagerOpen: false,
         categoryManagerType: 'expense'
     },
@@ -27,8 +28,13 @@ window.ExpensesModule = {
         let investment = 0;
 
         // Accumulated Investment Logic (Rewind from Current Total)
+        // Accumulated Investment Logic (Rewind from Current Total)
         // 1. Start with the CURRENT total invested (from Store)
-        let accumulatedInvestment = (banks.nubank?.invested || 0) + (banks.mercadoPago?.invested || 0) + (banks.other?.invested || 0);
+        let accumulatedInvestment = 0;
+        const bankDefs = Store.getBankDefinitions();
+        bankDefs.forEach(def => {
+            accumulatedInvestment += (banks[def.id]?.invested || 0);
+        });
 
         // 2. Determine Cutoff Date (End of selected period)
         let cutoffDate;
@@ -51,8 +57,11 @@ window.ExpensesModule = {
             if (e.type === 'investment') {
                 if (d > cutoffDate) {
                     // Future Investment (relative to view): REVERSE its effect to get back to past state
+                    // Future Investment (relative to view): REVERSE its effect to get back to past state
                     // If it's in Store.banks (has bankId), we must subtract it because Store has it included.
-                    if (e.bankId && ['nubank', 'mercadoPago', 'other'].includes(e.bankId)) {
+                    const isInternalBank = e.bankId && bankDefs.some(b => b.id === e.bankId);
+
+                    if (isInternalBank) {
                         if (e.investmentOperation === 'withdrawal') {
                             accumulatedInvestment += parseFloat(e.amount); // Reverse withdrawal
                         } else {
@@ -61,8 +70,11 @@ window.ExpensesModule = {
                     }
                 } else {
                     // Past/Current Investment (relative to view)
+                    // Past/Current Investment (relative to view)
                     // If it's NOT in Store.banks (no bankId), we must ADD it manually because Store doesn't have it.
-                    if (!e.bankId || !['nubank', 'mercadoPago', 'other'].includes(e.bankId)) {
+                    const isInternalBank = e.bankId && bankDefs.some(b => b.id === e.bankId);
+
+                    if (!isInternalBank) {
                         if (e.investmentOperation === 'withdrawal') {
                             accumulatedInvestment -= parseFloat(e.amount);
                         } else {
@@ -127,8 +139,13 @@ window.ExpensesModule = {
             const d = new Date(e.date);
             const isYearMatch = d.getFullYear() === currentYear;
             const isMonthMatch = d.getMonth() === currentMonth;
-            // Show ALL investments regardless of date
-            return e.type === 'investment';
+
+            if (this.state.investmentFilter === 'all') {
+                return e.type === 'investment';
+            }
+
+            // Default: Month view (respects global scope if needed, but usually investment monthly view is strict)
+            return e.type === 'investment' && isYearMatch && isMonthMatch;
         });
 
         if (filtered.length === 0) {
@@ -605,6 +622,20 @@ window.ExpensesModule = {
                         </div>
                     ` : ''}
 
+                    <!-- Tabs (Only for Investments) -->
+                    ${this.state.listTab === 'investments' ? `
+                        <div class="px-6 pt-4 flex gap-1 border-b border-gray-100 dark:border-white/5">
+                            <button onclick="ExpensesModule.setInvestmentFilter('month')" 
+                                class="px-6 py-2 text-sm font-medium border-b-2 transition-colors ${this.state.investmentFilter === 'month' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">
+                                Mês Atual
+                            </button>
+                            <button onclick="ExpensesModule.setInvestmentFilter('all')" 
+                                class="px-6 py-2 text-sm font-medium border-b-2 transition-colors ${this.state.investmentFilter === 'all' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">
+                                Todos
+                            </button>
+                        </div>
+                    ` : ''}
+
                     <!-- List Content -->
                     <div class="p-6">
                         ${this.state.listTab === 'expenses' ? `
@@ -644,12 +675,14 @@ window.ExpensesModule = {
                         <input type="hidden" id="modal-payment-mode" name="paymentMode" value="unico">
                         
                         <!-- Payment Source (Bank) -->
-                        <div class="space-y-1">
-                            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Fonte / Destino</label>
+                            <div class="flex justify-between items-center">
+                                <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Fonte / Destino</label>
+                                <button type="button" onclick="ExpensesModule.openCategoryManager('bank')" class="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1">
+                                    <i class="fa-solid fa-gear"></i> Gerenciar
+                                </button>
+                            </div>
                             <select name="bankId" class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
-                                <option value="nubank">Nubank</option>
-                                <option value="mercadoPago">Mercado Pago</option>
-                                <option value="other">Outros / Carteira</option>
+                                <!-- Populated by JS -->
                             </select>
                         </div>
 
@@ -1020,6 +1053,15 @@ window.ExpensesModule = {
             if (investmentOperationField) investmentOperationField.classList.remove('hidden');
         }
 
+
+
+        // Populate Banks
+        const bankSelect = document.querySelector('select[name="bankId"]');
+        if (bankSelect) {
+            const banks = Store.getBankDefinitions();
+            bankSelect.innerHTML = banks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+        }
+
         categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
 
         // Edit Mode
@@ -1143,12 +1185,20 @@ window.ExpensesModule = {
         router.handleRoute();
     },
 
+    setInvestmentFilter(filter) {
+        this.state.investmentFilter = filter;
+        this.render();
+    },
+
     openCategoryManager(type) {
         this.state.isCategoryManagerOpen = true;
 
         if (type === 'expenseType') {
             document.getElementById('category-manager-title').innerText = 'Gerenciar Tipos de Despesa';
             this.state.categoryManagerType = 'expenseType';
+        } else if (type === 'bank') {
+            document.getElementById('category-manager-title').innerText = 'Gerenciar Fontes (Bancos)';
+            this.state.categoryManagerType = 'bank';
         } else {
             document.getElementById('category-manager-title').innerText = 'Gerenciar Categorias';
             const currentModalType = document.getElementById('modal-type-input').value || 'expense';
@@ -1189,6 +1239,12 @@ window.ExpensesModule = {
             if (this.state.categoryManagerType === 'expenseType' && categoryTypeSelect) {
                 const types = Store.getExpenseTypes();
                 categoryTypeSelect.innerHTML = types.map(t => `<option value="${t}">${t}</option>`).join('');
+            } else if (this.state.categoryManagerType === 'bank') {
+                const bankSelect = document.querySelector('select[name="bankId"]');
+                if (bankSelect) {
+                    const banks = Store.getBankDefinitions();
+                    bankSelect.innerHTML = banks.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+                }
             } else if (categorySelect) {
                 if (['expense', 'income', 'investment'].includes(this.state.categoryManagerType)) {
                     const categories = Store.getCategories(this.state.categoryManagerType);
@@ -1205,6 +1261,8 @@ window.ExpensesModule = {
         let items = [];
         if (this.state.categoryManagerType === 'expenseType') {
             items = Store.getExpenseTypes();
+        } else if (this.state.categoryManagerType === 'bank') {
+            items = Store.getBankDefinitions().map(b => b.name);
         } else {
             items = Store.getCategories(this.state.categoryManagerType);
         }
@@ -1212,9 +1270,10 @@ window.ExpensesModule = {
         container.innerHTML = items.map(item => `
             <div class="flex justify-between items-center p-2 bg-gray-100 dark:bg-white/5 rounded-lg">
                 <span class="text-gray-800 dark:text-white text-sm">${item}</span>
+                ${(this.state.categoryManagerType === 'bank' && item === 'Outros / Carteira') ? '' : `
                 <button onclick="ExpensesModule.deleteCategory('${item}')" class="text-rose-500 hover:text-rose-600">
                     <i class="fa-solid fa-trash"></i>
-                </button>
+                </button>`}
             </div>
         `).join('');
     },
@@ -1225,6 +1284,8 @@ window.ExpensesModule = {
         if (value) {
             if (this.state.categoryManagerType === 'expenseType') {
                 Store.addExpenseType(value);
+            } else if (this.state.categoryManagerType === 'bank') {
+                Store.addBankDefinition(value);
             } else {
                 Store.addCategory(this.state.categoryManagerType, value);
             }
@@ -1237,6 +1298,9 @@ window.ExpensesModule = {
         if (confirm(`Excluir "${item}"?`)) {
             if (this.state.categoryManagerType === 'expenseType') {
                 Store.deleteExpenseType(item);
+            } else if (this.state.categoryManagerType === 'bank') {
+                const bankDef = Store.getBankDefinitions().find(b => b.name === item);
+                if (bankDef) Store.deleteBankDefinition(bankDef.id);
             } else {
                 Store.deleteCategory(this.state.categoryManagerType, item);
             }
@@ -1266,43 +1330,29 @@ window.ExpensesModule = {
         // Dynamically generate inputs for each bank balance and investment
         if (sourcesContainer) {
             sourcesContainer.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Balances -->
-                    <div class="space-y-3">
-                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Usar Saldo em Conta</h4>
-                        
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Balances -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Usar Saldo em Conta</h4>
+                        ${Store.getBankDefinitions().map(bank => `
                         <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nubank (Disp: R$ ${Store.formatCurrency(banks.nubank?.balance || 0)})</label>
-                            <input type="number" id="pay-balance-nubank" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">${bank.name} (Disp: R$ ${Store.formatCurrency(banks[bank.id]?.balance || 0)})</label>
+                            <input type="number" id="pay-balance-${bank.id}" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
                         </div>
-                        <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Mercado Pago (Disp: R$ ${Store.formatCurrency(banks.mercadoPago?.balance || 0)})</label>
-                            <input type="number" id="pay-balance-mercadoPago" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Outros (Disp: R$ ${Store.formatCurrency(banks.other?.balance || 0)})</label>
-                            <input type="number" id="pay-balance-other" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
-                        </div>
+                        `).join('')}
                     </div>
 
-                    <!-- Investments -->
-                    <div class="space-y-3">
-                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Resgatar Investimentos</h4>
-                        
+                    <!--Investments -->
+            <div class="space-y-3">
+                <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Resgatar Investimentos</h4>
+                ${Store.getBankDefinitions().map(bank => `
                         <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Nubank (Inv: R$ ${Store.formatCurrency(banks.nubank?.invested || 0)})</label>
-                            <input type="number" id="pay-invest-nubank" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">${bank.name} (Inv: R$ ${Store.formatCurrency(banks[bank.id]?.invested || 0)})</label>
+                            <input type="number" id="pay-invest-${bank.id}" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
                         </div>
-                        <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Mercado Pago (Inv: R$ ${Store.formatCurrency(banks.mercadoPago?.invested || 0)})</label>
-                            <input type="number" id="pay-invest-mercadoPago" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">Outros (Inv: R$ ${Store.formatCurrency(banks.other?.invested || 0)})</label>
-                            <input type="number" id="pay-invest-other" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
-                        </div>
-                    </div>
-                </div>
+                        `).join('')}
+            </div>
+                </div >
             `;
 
             // Add event listeners to update remaining total
@@ -1319,7 +1369,7 @@ window.ExpensesModule = {
                 const remainingFormatted = Store.formatCurrency(remaining > 0 ? remaining : 0);
 
                 if (totalEl) {
-                    totalEl.innerText = `R$ ${remainingFormatted}`;
+                    totalEl.innerText = `R$ ${remainingFormatted} `;
                     // Optional: Change color if fully paid
                     if (remaining <= 0.01) {
                         totalEl.classList.remove('text-rose-700', 'dark:text-rose-300');
@@ -1357,50 +1407,33 @@ window.ExpensesModule = {
     },
 
     confirmCloseMonth() {
-        // Get values from specific inputs
-        const balanceNubank = parseFloat(document.getElementById('pay-balance-nubank')?.value) || 0;
-        const balanceMP = parseFloat(document.getElementById('pay-balance-mercadoPago')?.value) || 0;
-        const balanceOther = parseFloat(document.getElementById('pay-balance-other')?.value) || 0;
+        // 1. Process Balance Deductions & 2. Process Investment Deductions
+        const bankDefinitions = Store.getBankDefinitions();
 
-        const investNubank = parseFloat(document.getElementById('pay-invest-nubank')?.value) || 0;
-        const investMP = parseFloat(document.getElementById('pay-invest-mercadoPago')?.value) || 0;
-        const investOther = parseFloat(document.getElementById('pay-invest-other')?.value) || 0;
+        bankDefinitions.forEach(bank => {
+            const balanceAmount = parseFloat(document.getElementById(`pay - balance - ${bank.id} `)?.value) || 0;
+            const investAmount = parseFloat(document.getElementById(`pay - invest - ${bank.id} `)?.value) || 0;
 
-        const totalPaid = balanceNubank + balanceMP + balanceOther + investNubank + investMP + investOther;
-
-        if (totalPaid === 0) {
-            if (!confirm('Nenhum valor de pagamento foi informado. Deseja fechar o mês apenas marcando as despesas como pagas, sem debitar de nenhum saldo?')) {
-                return;
+            if (balanceAmount > 0) {
+                Store.updateBankBalance(bank.id, -balanceAmount, 'balance');
             }
-        }
 
-        // 1. Process Balance Deductions
-        if (balanceNubank > 0) Store.updateBankBalance('nubank', -balanceNubank, 'balance');
-        if (balanceMP > 0) Store.updateBankBalance('mercadoPago', -balanceMP, 'balance');
-        if (balanceOther > 0) Store.updateBankBalance('other', -balanceOther, 'balance');
-
-        // 2. Process Investment Deductions (Create Withdrawal Transactions + Deduct from Invested)
-        const processInvestment = (amount, bankId, bankName) => {
-            if (amount > 0) {
+            if (investAmount > 0) {
                 // Deduct from invested amount in store
-                Store.updateBankBalance(bankId, -amount, 'invested');
+                Store.updateBankBalance(bank.id, -investAmount, 'invested');
 
                 // Create withdrawal record
                 const withdrawal = {
-                    description: `Pagamento Fatura (${bankName}) - ${this.getMonthName(this.state.currentMonth)}`,
-                    amount: -Math.abs(amount), // Negative for withdrawal
+                    description: `Pagamento Fatura(${bank.name}) - ${this.getMonthName(this.state.currentMonth)} `,
+                    amount: -Math.abs(investAmount), // Negative for withdrawal
                     type: 'investment',
                     date: new Date().toISOString().split('T')[0],
                     investmentOperation: 'withdrawal',
-                    bankId: bankId
+                    bankId: bank.id
                 };
                 Store.addExpense(withdrawal);
             }
-        };
-
-        processInvestment(investNubank, 'nubank', 'Nubank');
-        processInvestment(investMP, 'mercadoPago', 'Mercado Pago');
-        processInvestment(investOther, 'other', 'Outros');
+        });
 
         // 3. Mark expenses as paid
         const expenses = Store.getExpenses();
@@ -1415,7 +1448,7 @@ window.ExpensesModule = {
             }
         });
 
-        alert(`Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalPaid)}`);
+        alert(`Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalPaid)} `);
         this.closeCloseMonthModal();
         router.handleRoute();
     },
@@ -1631,17 +1664,17 @@ window.ExpensesModule = {
         // Create modal if not exists
         if (!document.getElementById('bank-modal')) {
             const modalHtml = `
-                <div id="bank-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
-                    <div class="bg-white dark:bg-zenox-surface rounded-2xl w-[95%] md:w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-white/10">
-                        <div class="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
-                            <h3 class="text-xl font-bold text-gray-800 dark:text-white" id="bank-modal-title">Editar Banco</h3>
-                            <button onclick="ExpensesModule.closeBankModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
-                                <i class="fa-solid fa-xmark text-xl"></i>
-                            </button>
-                        </div>
-                        <form id="bank-form" onsubmit="ExpensesModule.saveBankData(event)" class="p-6 space-y-5">
-                            <input type="hidden" id="bank-modal-id" name="bankId">
-                            
+            < div id = "bank-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300" >
+                <div class="bg-white dark:bg-zenox-surface rounded-2xl w-[95%] md:w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-white/10">
+                    <div class="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white" id="bank-modal-title">Editar Banco</h3>
+                        <button onclick="ExpensesModule.closeBankModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="bank-form" onsubmit="ExpensesModule.saveBankData(event)" class="p-6 space-y-5">
+                        <input type="hidden" id="bank-modal-id" name="bankId">
+
                             <div class="space-y-1">
                                 <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Saldo em Conta (R$)</label>
                                 <input type="number" name="balance" step="0.01" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
@@ -1660,9 +1693,9 @@ window.ExpensesModule = {
                                     Salvar Alterações
                                 </button>
                             </div>
-                        </form>
-                    </div>
+                    </form>
                 </div>
+                </div >
             `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
@@ -1673,7 +1706,7 @@ window.ExpensesModule = {
         const balanceInput = document.querySelector('#bank-form input[name="balance"]');
         const investedInput = document.querySelector('#bank-form input[name="invested"]');
 
-        title.innerText = `Editar ${bankName}`;
+        title.innerText = `Editar ${bankName} `;
         idInput.value = bankId;
         balanceInput.value = bankData.balance;
         investedInput.value = bankData.invested;

@@ -19,6 +19,11 @@ window.Store = {
             nubank: { balance: 0, invested: 0 },
             mercadoPago: { balance: 0, invested: 0 }
         },
+        bankDefinitions: [
+            { id: 'nubank', name: 'Nubank' },
+            { id: 'mercadoPago', name: 'Mercado Pago' },
+            { id: 'other', name: 'Outros / Carteira' }
+        ],
         dailyMetrics: {}
     },
 
@@ -145,7 +150,12 @@ window.Store = {
             banks: {
                 nubank: { balance: 0, invested: 0 },
                 mercadoPago: { balance: 0, invested: 0 }
-            }
+            },
+            bankDefinitions: [
+                { id: 'nubank', name: 'Nubank' },
+                { id: 'mercadoPago', name: 'Mercado Pago' },
+                { id: 'other', name: 'Outros / Carteira' }
+            ]
         };
         this.save();
     },
@@ -161,9 +171,17 @@ window.Store = {
             this.state.timeframes = ['1m', '5m', '15m', '1h', '4h', '1D'];
         }
 
-        // Migration: Add checklists if missing
         if (!this.state.checklists) {
             this.state.checklists = [];
+        }
+
+        // Migration: Add bankDefinitions if missing
+        if (!this.state.bankDefinitions) {
+            this.state.bankDefinitions = [
+                { id: 'nubank', name: 'Nubank' },
+                { id: 'mercadoPago', name: 'Mercado Pago' },
+                { id: 'other', name: 'Outros / Carteira' }
+            ];
         }
 
         // Auto-cleanup demo expenses
@@ -368,7 +386,12 @@ window.Store = {
     },
 
     updateBankBalance(bankId, amount, type = 'balance') {
-        if (this.state.banks && this.state.banks[bankId]) {
+        if (this.state.banks) {
+            // Ensure bank exists in data object
+            if (!this.state.banks[bankId]) {
+                this.state.banks[bankId] = { balance: 0, invested: 0 };
+            }
+
             // amount can be negative
             const current = parseFloat(this.state.banks[bankId][type] || 0);
             this.state.banks[bankId][type] = current + parseFloat(amount);
@@ -376,6 +399,36 @@ window.Store = {
             return true;
         }
         return false;
+    },
+
+    // --- Bank Definitions Management ---
+    getBankDefinitions() {
+        return this.state.bankDefinitions || [];
+    },
+
+    addBankDefinition(name) {
+        if (!this.state.bankDefinitions) this.state.bankDefinitions = [];
+
+        // Check duplicate names
+        if (this.state.bankDefinitions.some(b => b.name.toLowerCase() === name.toLowerCase())) {
+            return false;
+        }
+
+        const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now().toString().slice(-4);
+        this.state.bankDefinitions.push({ id, name });
+
+        // Initialize data
+        if (!this.state.banks) this.state.banks = {};
+        if (!this.state.banks[id]) this.state.banks[id] = { balance: 0, invested: 0 };
+
+        this.save();
+        return true;
+    },
+
+    deleteBankDefinition(id) {
+        if (id === 'other') return; // Protect default
+        this.state.bankDefinitions = this.state.bankDefinitions.filter(b => b.id !== id);
+        this.save();
     },
 
     // --- Trades ---
