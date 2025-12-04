@@ -62,6 +62,10 @@ window.Store = {
             this.currentUser = session.user;
             console.log('User logged in:', session.user.email);
             this.setSyncStatus('online');
+
+            // Clear local cache to ensure we rely only on DB
+            localStorage.removeItem(this.STORAGE_KEY);
+
             await this.loadFromSupabase(session.user.id);
 
             // Update UI button
@@ -193,8 +197,10 @@ window.Store = {
     },
 
     save() {
-        // Save to LocalStorage (Always backup)
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
+        // Save to LocalStorage ONLY if NOT logged in
+        if (!this.currentUser) {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
+        }
 
         // Save to Supabase (Debounced)
         if (this.currentUser) {

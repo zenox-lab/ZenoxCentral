@@ -25,11 +25,26 @@ window.DashboardModule = {
             habitsCompletion = Math.round((completedToday / habits.length) * 100);
         }
 
+        // 4. Wallet (Total Equity)
+        let walletTotal = 0;
+        let walletCount = 0;
+        // Ensure WalletModule data is loaded
+        if (window.WalletModule && window.WalletModule.data) {
+            const walletData = window.WalletModule.data;
+            if (walletData.assets) {
+                walletTotal = walletData.assets.reduce((acc, asset) => {
+                    const price = asset.lastPrice || asset.entryPrice || 0;
+                    return acc + (price * asset.quantity);
+                }, 0);
+                walletCount = walletData.assets.length;
+            }
+        }
+
         return `
             <div class="animate-fade-in space-y-8">
                 
                 <!-- Top Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     
                     <!-- Expenses Card -->
                     <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
@@ -85,6 +100,25 @@ window.DashboardModule = {
                         <!-- Background Decoration -->
                         <div class="absolute -bottom-4 -right-4 text-emerald-500/5 dark:text-emerald-500/10 transform rotate-12">
                             <i class="fa-solid fa-check-circle text-8xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- Investments Card (NEW) -->
+                    <div onclick="document.getElementById('investments-section').scrollIntoView({behavior: 'smooth'})" class="cursor-pointer bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32 hover:border-purple-500/50 transition-all">
+                        <div class="flex justify-between items-start z-10">
+                            <div>
+                                <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Investimentos</p>
+                                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">$ ${Store.formatCurrency(walletTotal)}</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-500">
+                                <i class="fa-solid fa-chart-pie text-lg"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 z-10">${walletCount} ativos em carteira</p>
+                        
+                        <!-- Background Decoration -->
+                        <div class="absolute -bottom-4 -right-4 text-purple-500/5 dark:text-purple-500/10 transform rotate-12">
+                            <i class="fa-solid fa-chart-pie text-8xl"></i>
                         </div>
                     </div>
 
@@ -147,7 +181,22 @@ window.DashboardModule = {
                     </div>
                 </div>
 
+                <!-- Investments Section (NEW) -->
+                <div id="investments-section" class="pt-8 border-t border-gray-200 dark:border-white/5">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-white">Carteira de Investimentos</h2>
+                        <button onclick="router.navigate('wallet')" class="text-sm text-zenox-primary hover:underline">Ver Detalhes Completos</button>
+                    </div>
+                    ${window.WalletModule ? window.WalletModule.renderPortfolio() : '<p class="text-gray-500">Carregando carteira...</p>'}
+                </div>
+
             </div>
         `;
+    },
+
+    afterRender() {
+        if (window.WalletModule) {
+            window.WalletModule.renderSectorChart();
+        }
     }
 };

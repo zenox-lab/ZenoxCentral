@@ -136,7 +136,15 @@ window.ExpensesModule = {
         const viewScope = this.state.viewScope;
 
         const filtered = expenses.filter(e => {
-            const d = new Date(e.date);
+            // Robust Date Parsing
+            let d = new Date(e.date);
+            if (isNaN(d.getTime())) {
+                const parts = e.date.split('-');
+                if (parts.length === 3) {
+                    d = new Date(parts[0], parts[1] - 1, parts[2]);
+                }
+            }
+
             const isYearMatch = d.getFullYear() === currentYear;
             const isMonthMatch = d.getMonth() === currentMonth;
 
@@ -144,7 +152,7 @@ window.ExpensesModule = {
                 return e.type === 'investment';
             }
 
-            // Default: Month view (respects global scope if needed, but usually investment monthly view is strict)
+            // Default: Month view
             return e.type === 'investment' && isYearMatch && isMonthMatch;
         });
 
@@ -1187,7 +1195,7 @@ window.ExpensesModule = {
 
     setInvestmentFilter(filter) {
         this.state.investmentFilter = filter;
-        this.render();
+        router.handleRoute();
     },
 
     openCategoryManager(type) {

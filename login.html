@@ -170,7 +170,7 @@
         for (let i = 0; i < TOTAL_NODES; i++) {
 
             const angle = Math.random() * Math.PI * 2;
-            const baseRadius = canvas.height * 0.38;
+            const baseRadius = canvas.height * 0.42;
             const offset = Math.random() * (canvas.height * 0.10);
             const radius = baseRadius - offset;
 
@@ -180,8 +180,8 @@
             nodes.push({
                 x,
                 y,
-                vx: (Math.random() - 0.5) * 0.15,
-                vy: (Math.random() - 0.5) * 0.15,
+                vx: (Math.random() - 0.5) * 0.40,
+                vy: (Math.random() - 0.5) * 0.40,
                 color: randomColor(),
                 size: Math.random() * 2 + 1.5
             });
@@ -222,7 +222,7 @@
             // Movimento leve sem pulsação
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const maxRadius = canvas.height * 0.40;
+            const maxRadius = canvas.height * 0.45;
 
             for (let n of nodes) {
 

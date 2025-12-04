@@ -66,12 +66,13 @@
 
         // Theme Initialization
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-        if (localStorage.getItem('theme') === 'light') {
-            document.documentElement.classList.remove('dark');
-            if (metaThemeColor) metaThemeColor.setAttribute('content', '#f3f4f6');
-        } else {
+        // Default to Light if null or 'light'
+        if (localStorage.getItem('theme') === 'dark') {
             document.documentElement.classList.add('dark');
             if (metaThemeColor) metaThemeColor.setAttribute('content', '#09090b');
+        } else {
+            document.documentElement.classList.remove('dark');
+            if (metaThemeColor) metaThemeColor.setAttribute('content', '#f3f4f6');
         }
     </script>
 </head>
@@ -196,7 +197,7 @@
 
             <!-- Auth Button -->
             <button onclick="AuthModule.handleAuthClick()" id="auth-btn"
-                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
+                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group hover:scale-105">
                 <i id="auth-btn-icon" class="fa-solid fa-right-to-bracket text-base w-5 text-center"></i>
                 <span id="auth-btn-text" class="text-sm font-medium">Login</span>
             </button>
@@ -250,7 +251,7 @@
     <script src="js/modules/trades.js?v=1.2"></script>
     <script src="js/modules/equity.js?v=1.2"></script>
     <script src="js/modules/analysis.js?v=1.2"></script>
-    <script src="js/modules/expenses.js?v=1.2"></script>
+    <script src="js/modules/expenses.js?v=1.3"></script>
     <script src="js/modules/habits.js?v=1.2"></script>
     <script src="js/modules/notes.js?v=1.2"></script>
     <script src="js/modules/strategies.js?v=1.2"></script>

@@ -39,7 +39,7 @@ const AuthModule = {
                     </div>
 
                     <button type="submit" id="auth-submit-btn" 
-                        class="w-full py-3.5 bg-gradient-to-r from-zenox-primary to-zenox-secondary hover:from-cyan-400 hover:to-violet-400 text-white rounded-xl font-bold shadow-lg shadow-zenox-primary/25 hover:shadow-zenox-primary/40 transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 text-base">
+                        class="w-full py-3.5 bg-gradient-to-r from-zenox-primary to-zenox-secondary hover:from-cyan-400 hover:to-violet-400 text-white rounded-xl font-bold shadow-lg shadow-zenox-primary/25 hover:shadow-zenox-primary/40 transform hover:-translate-y-0.5 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 text-base">
                         <span>Entrar</span>
                         <i class="fa-solid fa-arrow-right"></i>
                     </button>
