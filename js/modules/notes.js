@@ -54,7 +54,7 @@ window.NotesModule = {
                 </header>
 
                 <!-- Kanban Board -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pb-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-3 pb-4">
                     <!-- Column: A Fazer -->
                     <div class="flex flex-col gap-2 min-w-[220px]">
                         <div class="flex items-center justify-between mb-1">
@@ -203,7 +203,7 @@ window.NotesModule = {
         };
 
         return `
-            <div class="${colorTheme.bg} border ${colorTheme.border} p-2.5 rounded-lg hover:border-zenox-accent/50 transition-all group relative flex flex-col h-full shadow-sm hover:shadow-md hover:-translate-y-0.5">
+            <div class="${colorTheme.bg} border ${colorTheme.border} p-2 rounded-lg hover:border-zenox-accent/50 transition-all group relative flex flex-col h-full shadow-sm hover:shadow-md hover:-translate-y-0.5 text-xs max-w-[200px]">
                 <!-- Actions (Hidden by default, shown on hover) -->
                 <div class="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/10 p-0.5 rounded backdrop-blur-sm z-10">
                     <button onclick="NotesModule.togglePin('${note.id}')" class="w-5 h-5 flex items-center justify-center rounded hover:bg-white/20 text-white transition-colors" title="${note.isPinned ? 'Desafixar' : 'Fixar'}">

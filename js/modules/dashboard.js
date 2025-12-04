@@ -47,7 +47,7 @@ window.DashboardModule = {
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     
                     <!-- Expenses Card -->
-                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
+                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group min-h-[8rem]">
                         <div class="flex justify-between items-start z-10">
                             <div>
                                 <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Gastos do Mês</p>
@@ -66,7 +66,7 @@ window.DashboardModule = {
                     </div>
 
                     <!-- Trades Card -->
-                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
+                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group min-h-[8rem]">
                         <div class="flex justify-between items-start z-10">
                             <div>
                                 <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Trades Hoje</p>
@@ -85,7 +85,7 @@ window.DashboardModule = {
                     </div>
 
                     <!-- Habits Card -->
-                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32">
+                    <div class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group min-h-[8rem]">
                         <div class="flex justify-between items-start z-10">
                             <div>
                                 <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Hábitos</p>
@@ -104,11 +104,11 @@ window.DashboardModule = {
                     </div>
 
                     <!-- Investments Card (NEW) -->
-                    <div onclick="document.getElementById('investments-section').scrollIntoView({behavior: 'smooth'})" class="cursor-pointer bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group h-32 hover:border-purple-500/50 transition-all">
+                    <div onclick="document.getElementById('investments-section').scrollIntoView({behavior: 'smooth'})" class="cursor-pointer bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col justify-between relative overflow-hidden group min-h-[8rem] hover:border-purple-500/50 transition-all">
                         <div class="flex justify-between items-start z-10">
                             <div>
                                 <p class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Investimentos</p>
-                                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">$ ${Store.formatCurrency(walletTotal)}</h3>
+                                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mt-1">R$ ${Store.formatCurrency(walletTotal)}</h3>
                             </div>
                             <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-purple-500">
                                 <i class="fa-solid fa-chart-pie text-lg"></i>
@@ -131,7 +131,7 @@ window.DashboardModule = {
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         
                         <!-- Financeiro -->
-                        <button onclick="router.navigate('expenses')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                        <button onclick="router.navigate('expenses')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all group min-h-[8rem]">
                             <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-zenox-primary/10 transition-colors">
                                 <i class="fa-solid fa-wallet text-gray-400 dark:text-gray-500 group-hover:text-zenox-primary transition-colors text-lg"></i>
                             </div>
@@ -139,7 +139,7 @@ window.DashboardModule = {
                         </button>
 
                         <!-- Diário de Trade -->
-                        <button onclick="router.navigate('trades')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-blue-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                        <button onclick="router.navigate('trades')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-blue-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group min-h-[8rem]">
                             <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-500/10 transition-colors">
                                 <i class="fa-solid fa-chart-candlestick text-gray-400 dark:text-gray-500 group-hover:text-blue-500 transition-colors text-lg"></i>
                             </div>
@@ -147,7 +147,7 @@ window.DashboardModule = {
                         </button>
 
                         <!-- Hábitos -->
-                        <button onclick="router.navigate('habits')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                        <button onclick="router.navigate('habits')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-emerald-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group min-h-[8rem]">
                             <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
                                 <i class="fa-solid fa-list-check text-gray-400 dark:text-gray-500 group-hover:text-emerald-500 transition-colors text-lg"></i>
                             </div>
@@ -155,7 +155,7 @@ window.DashboardModule = {
                         </button>
 
                         <!-- Anotações -->
-                        <button onclick="router.navigate('notes')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-secondary/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                        <button onclick="router.navigate('notes')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-secondary/50 hover:shadow-lg hover:-translate-y-1 transition-all group min-h-[8rem]">
                             <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-zenox-secondary/10 transition-colors">
                                 <i class="fa-solid fa-note-sticky text-gray-400 dark:text-gray-500 group-hover:text-zenox-secondary transition-colors text-lg"></i>
                             </div>
@@ -163,7 +163,7 @@ window.DashboardModule = {
                         </button>
 
                          <!-- Estratégias -->
-                        <button onclick="router.navigate('strategies')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-accent/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                        <button onclick="router.navigate('strategies')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-zenox-accent/50 hover:shadow-lg hover:-translate-y-1 transition-all group min-h-[8rem]">
                             <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-zenox-accent/10 transition-colors">
                                 <i class="fa-solid fa-bullseye text-gray-400 dark:text-gray-500 group-hover:text-zenox-accent transition-colors text-lg"></i>
                             </div>
@@ -171,7 +171,7 @@ window.DashboardModule = {
                         </button>
 
                         <!-- Checklist -->
-                        <button onclick="router.navigate('checklist')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-pink-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group h-32">
+                        <button onclick="router.navigate('checklist')" class="bg-white dark:bg-zenox-surface p-6 rounded-2xl shadow-card border border-gray-100 dark:border-white/5 flex flex-col items-center justify-center gap-3 hover:border-pink-500/50 hover:shadow-lg hover:-translate-y-1 transition-all group min-h-[8rem]">
                             <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-white/5 flex items-center justify-center group-hover:bg-pink-500/10 transition-colors">
                                 <i class="fa-solid fa-clipboard-list text-gray-400 dark:text-gray-500 group-hover:text-pink-500 transition-colors text-lg"></i>
                             </div>
