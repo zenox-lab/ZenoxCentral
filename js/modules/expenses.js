@@ -1194,6 +1194,14 @@ window.ExpensesModule = {
         router.handleRoute();
     },
 
+    deleteExpense(id) {
+        if (confirm('Tem certeza que deseja excluir este registro?')) {
+            Store.deleteExpense(id);
+            this.render();
+            this.renderCharts();
+        }
+    },
+
     setInvestmentFilter(filter) {
         this.state.investmentFilter = filter;
         router.handleRoute();
