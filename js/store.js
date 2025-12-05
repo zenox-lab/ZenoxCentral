@@ -69,10 +69,11 @@ window.Store = {
             await this.loadFromSupabase(session.user.id);
 
             // Update UI button
-            const btnText = document.getElementById('auth-btn-text');
-            const btnIcon = document.getElementById('auth-btn-icon');
-            if (btnText) btnText.textContent = 'Logout';
-            if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
+            // Update UI button (Removed)
+            // const btnText = document.getElementById('auth-btn-text');
+            // const btnIcon = document.getElementById('auth-btn-icon');
+            // if (btnText) btnText.textContent = 'Logout';
+            // if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
         } else {
             this.currentUser = null;
             console.log('User logged out');
@@ -80,10 +81,11 @@ window.Store = {
             this.loadFromLocalStorage();
 
             // Update UI button
-            const btnText = document.getElementById('auth-btn-text');
-            const btnIcon = document.getElementById('auth-btn-icon');
-            if (btnText) btnText.textContent = 'Login';
-            if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
+            // Update UI button (Removed)
+            // const btnText = document.getElementById('auth-btn-text');
+            // const btnIcon = document.getElementById('auth-btn-icon');
+            // if (btnText) btnText.textContent = 'Login';
+            // if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
         }
     },
 

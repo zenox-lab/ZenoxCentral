@@ -156,7 +156,7 @@ const AuthModule = {
         if (supabase) {
             await supabase.auth.signOut();
         }
-        localStorage.removeItem('zenox_access_granted');
+        sessionStorage.removeItem('zenox_access_granted');
         window.location.href = 'login.html';
     },
 

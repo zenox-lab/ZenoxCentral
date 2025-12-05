@@ -117,7 +117,7 @@
 
             // Credenciais Hardcoded solicitadas
             if (user === 'Ventura' && pass === 'Chmod777$linux') {
-                localStorage.setItem('zenox_access_granted', 'true');
+                sessionStorage.setItem('zenox_access_granted', 'true');
                 window.location.href = 'index.html';
             } else {
                 alert('Acesso Negado: Credenciais Inválidas');

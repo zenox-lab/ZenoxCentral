@@ -60,7 +60,7 @@
     <link rel="stylesheet" href="css/style.css">
     <script>
         // Access Control Check
-        if (!localStorage.getItem('zenox_access_granted')) {
+        if (!sessionStorage.getItem('zenox_access_granted')) {
             window.location.href = 'login.html';
         }
 
@@ -97,8 +97,8 @@
                 </div>
                 <span class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">ZENOX</span>
             </div>
-            <!-- Sync Status Indicator -->
-            <div id="sync-status" class="ml-auto text-xs"></div>
+            <!-- Sync Status Indicator Removed -->
+            <div id="sync-status" class="hidden ml-auto text-xs"></div>
         </div>
 
         <!-- Navigation -->
@@ -195,12 +195,8 @@
                 <span class="text-sm font-medium">Alternar Tema</span>
             </button>
 
-            <!-- Auth Button -->
-            <button onclick="AuthModule.handleAuthClick()" id="auth-btn"
-                class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group hover:scale-105">
-                <i id="auth-btn-icon" class="fa-solid fa-right-to-bracket text-base w-5 text-center"></i>
-                <span id="auth-btn-text" class="text-sm font-medium">Login</span>
-            </button>
+            <!-- Auth Button Removed -->
+
         </div>
     </aside>
 
