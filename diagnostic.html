@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenox Diagnostic Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            background: #111;
+            color: #0f0;
+            padding: 20px;
+        }
+
+        .log {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 2px;
+        }
+
+        .error {
+            color: #f55;
+            font-weight: bold;
+        }
+
+        .success {
+            color: #5f5;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            margin: 10px 0;
+        }
+
+        input {
+            padding: 8px;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Zenox System Diagnostic</h1>
+    <div>
+        <input type="email" id="email" placeholder="Email do Supabase">
+        <input type="password" id="password" placeholder="Senha do Supabase">
+        <button onclick="runDiagnostics()">INICIAR DIAGNÓSTICO</button>
+    </div>
+    <div id="console"></div>
+
+    <script>
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            document.getElementById('console').appendChild(div);
+            console.log(msg);
+        }
+
+        async function runDiagnostics() {
+            document.getElementById('console').innerHTML = '';
+            log("Iniciando diagnósticos...", "info");
+
+            // 1. Check SDK
+            if (!supabase) {
+                log("FATAL: Supabase SDK não carregou.", "error");
+                return;
+            }
+            log("SDK do Supabase carregado.", "success");
+
+            // 2. Check Auth
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                log("Por favor, digite email e senha para testar.", "error");
+                return;
+            }
+
+            log(`Tentando login com: ${email}...`, "info");
+
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email, password
+            });
+
+            if (authError) {
+                log(`ERRO DE LOGIN: ${authError.message}`, "error");
+                return;
+            }
+            log(`Login OK! ID do Usuário: ${authData.user.id}`, "success");
+
+            // 3. Test WRITE (Upsert)
+            log("Testando GRAVAÇÃO (Upsert) na tabela 'user_data'...", "info");
+            const testPayload = {
+                user_id: authData.user.id,
+                data: { diagnostic_test: true, timestamp: new Date().toISOString() }
+            };
+
+            const { data: writeData, error: writeError } = await supabase
+                .from('user_data')
+                .upsert(testPayload)
+                .select();
+
+            if (writeError) {
+                log(`FALHA NA GRAVAÇÃO: ${writeError.message}`, "error");
+                log(`Código do Erro: ${writeError.code}`, "error");
+                log(`DICA: Verifique se a tabela 'user_data' existe e se as Políticas RLS (Row Level Security) permitem INSERT/UPDATE.`, "warning");
+            } else {
+                log("GRAVAÇÃO BEM SUCEDIDA!", "success");
+            }
+
+            // 4. Test READ
+            log("Testando LEITURA da tabela 'user_data'...", "info");
+            const { data: readData, error: readError } = await supabase
+                .from('user_data')
+                .select('*')
+                .eq('user_id', authData.user.id);
+
+            if (readError) {
+                log(`FALHA NA LEITURA: ${readError.message}`, "error");
+            } else if (readData.length === 0) {
+                log("Leitura OK, mas nenhum dado retornado (Zero Rows).", "warning");
+            } else {
+                log(`Leitura OK! Dados encontrados.`, "success");
+            }
+
+            // 5. Test Realtime
+            log("Testando Conexão Realtime...", "info");
+            const channel = supabase.channel('diagnostic_test')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'user_data' }, (payload) => {
+                    log("EVENTO REALTIME RECEBIDO!", "success");
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        log("Realtime conectado (SUBSCRIBED).", "success");
+                    } else {
+                        log(`Status do Realtime: ${status}`, "info");
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>

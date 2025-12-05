@@ -79,26 +79,82 @@ window.Store = {
             // localStorage.removeItem(this.STORAGE_KEY); // FIXED: Do not clear immediately to prevent data loss if DB is empty
 
             await this.loadFromSupabase(session.user.id);
+            this.subscribeToRealtime(session.user.id);
 
             // Update UI button
-            // Update UI button (Removed)
-            // const btnText = document.getElementById('auth-btn-text');
-            // const btnIcon = document.getElementById('auth-btn-icon');
-            // if (btnText) btnText.textContent = 'Logout';
-            // if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
+            const btnText = document.getElementById('auth-btn-text');
+            const btnIcon = document.getElementById('auth-btn-icon');
+            if (btnText) btnText.textContent = 'Sair da Conta';
+            if (btnIcon) btnIcon.className = 'fa-solid fa-right-from-bracket text-red-500 text-base w-5 text-center';
         } else {
+            if (this.realtimeSubscription) {
+                supabase.removeChannel(this.realtimeSubscription);
+                this.realtimeSubscription = null;
+            }
             this.currentUser = null;
             console.log('User logged out');
             this.setSyncStatus('offline');
             this.loadFromLocalStorage();
 
             // Update UI button
-            // Update UI button (Removed)
-            // const btnText = document.getElementById('auth-btn-text');
-            // const btnIcon = document.getElementById('auth-btn-icon');
-            // if (btnText) btnText.textContent = 'Login';
-            // if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
+            const btnText = document.getElementById('auth-btn-text');
+            const btnIcon = document.getElementById('auth-btn-icon');
+            if (btnText) btnText.textContent = 'Login / Sincronizar';
+            if (btnIcon) btnIcon.className = 'fa-solid fa-right-to-bracket text-gray-400 group-hover:text-zenox-primary transition-colors text-base w-5 text-center';
         }
+    },
+
+    subscribeToRealtime(uid) {
+        if (!supabase) return;
+
+        // Remove existing subscription if any
+        if (this.realtimeSubscription) {
+            supabase.removeChannel(this.realtimeSubscription);
+        }
+
+        console.log('Initializing Realtime Subscription for user:', uid);
+
+        this.realtimeSubscription = supabase
+            .channel('public:user_data:' + uid)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'user_data',
+                filter: `user_id=eq.${uid}`
+            }, (payload) => {
+                console.log('Realtime update received:', payload);
+                if (payload.new && payload.new.data) {
+                    // Check if data is actually different to avoid echo/loops
+                    // We only update if the server version is different from our local version
+                    // This handles the case where WE triggered the save (echo) vs another device
+                    const incomingData = payload.new.data;
+                    const currentDataStr = JSON.stringify(this.state);
+                    const incomingDataStr = JSON.stringify(incomingData);
+
+                    if (currentDataStr !== incomingDataStr) {
+                        console.log('Syncing data from remote device...');
+                        this.state = incomingData;
+                        this.runMigrations(); // Ensure structure is correct
+
+                        // Refresh UI
+                        if (window.router) {
+                            window.router.handleRoute();
+                        }
+                        if (window.updateDashboard) { // Specific for dashboard if needed
+                            window.updateDashboard();
+                        }
+
+                        // Visual feedback
+                        this.setSyncStatus('saved');
+                        setTimeout(() => this.setSyncStatus('online'), 2000);
+                    } else {
+                        console.log('Ignored echo update (data identical)');
+                    }
+                }
+            })
+            .subscribe((status) => {
+                console.log('Realtime subscription status:', status);
+            });
     },
 
     handleSyncClick() {
@@ -110,7 +166,7 @@ window.Store = {
             alert('Erro: Banco de dados não conectado.');
             return;
         }
-        alert('Tentando forçar sincronização agora...');
+        alert('Sincronização forçada enviada. Se houver dados novos no servidor, eles aparecerão em breve via Realtime.');
         this.saveToSupabase();
     },
 
@@ -133,10 +189,21 @@ window.Store = {
                 .single();
 
             if (data && data.data) {
-                this.state = data.data;
-                this.runMigrations();
-                console.log('Data loaded from Supabase');
-                this.setSyncStatus('online'); // Back to online
+                // Check if Cloud is effectively empty / new account
+                // data.data is the JSON object stored in the column
+                const cloudHasData = (data.data.expenses?.length > 0) || (data.data.notes?.length > 0) || (data.data.trades?.length > 0);
+                const localHasData = (this.state.expenses?.length > 0) || (this.state.notes?.length > 0) || (this.state.trades?.length > 0);
+
+                if (!cloudHasData && localHasData) {
+                    console.log('Cloud data is empty, but Local has data. Uploading Local -> Cloud...');
+                    // Don't overwrite local. Instead, save local to cloud.
+                    this.saveToSupabase();
+                } else {
+                    console.log('Syncing data from Cloud...');
+                    this.state = data.data;
+                    this.runMigrations();
+                    this.setSyncStatus('online'); // Back to online
+                }
 
                 // Refresh UI if router exists
                 if (window.router) {
@@ -147,7 +214,9 @@ window.Store = {
                 this.loadFromLocalStorage(); // Load local first
                 this.saveToSupabase(); // Then upload to cloud
             } else {
-                throw error;
+                // Row exists but 'data' column is null?
+                console.log('Cloud row exists but data is null. Uploading Local -> Cloud...');
+                this.saveToSupabase();
             }
         } catch (error) {
             console.error('Error loading from Supabase:', error);
