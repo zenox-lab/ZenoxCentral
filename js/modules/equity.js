@@ -2,7 +2,7 @@ window.EquityModule = {
     render() {
         const trades = Store.getTrades();
         const stats = this.calculateStats(trades);
-        const initialBalance = parseFloat(localStorage.getItem('zenox_initial_balance')) || 50000; // Default Prop Account Balance
+        const initialBalance = Store.getPropBalance(); // Syncable
         const currentBalance = initialBalance + stats.totalProfit;
 
         return `
@@ -211,7 +211,7 @@ window.EquityModule = {
         const avgLoss = losses > 0 ? grossLoss / losses : 0;
         const winRate = totalOps > 0 ? ((wins / totalOps) * 100).toFixed(1) : 0;
         const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : grossProfit > 0 ? '∞' : '0.00';
-        const initialBalance = 50000;
+        const initialBalance = Store.getPropBalance();
         const returnPercentage = ((totalProfit / initialBalance) * 100).toFixed(2);
 
         return {
@@ -229,11 +229,11 @@ window.EquityModule = {
     },
 
     editBalance() {
-        const current = parseFloat(localStorage.getItem('zenox_initial_balance')) || 50000;
+        const current = Store.getPropBalance();
         const newBalance = prompt('Digite o novo saldo inicial da conta:', current);
 
         if (newBalance !== null && !isNaN(newBalance)) {
-            localStorage.setItem('zenox_initial_balance', parseFloat(newBalance));
+            Store.setPropBalance(newBalance); // Saves to Cloud
             router.handleRoute(); // Re-render
         }
     },
@@ -245,7 +245,7 @@ window.EquityModule = {
         const trades = Store.getTrades();
         const sortedTrades = [...trades].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        let balance = parseFloat(localStorage.getItem('zenox_initial_balance')) || 50000;
+        let balance = Store.getPropBalance();
         const dataPoints = [balance];
         const labels = ['Início'];
 

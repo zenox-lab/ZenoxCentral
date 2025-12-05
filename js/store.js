@@ -228,6 +228,7 @@ window.Store = {
     setDefaultState() {
         this.state = {
             theme: 'dark',
+            propBalance: 50000, // Syncable balance
             trades: [],
             expenses: [],
             habits: [],
@@ -582,6 +583,15 @@ window.Store = {
         this.save();
     },
     getExpenses() { return this.state.expenses || []; },
+
+    // --- Equity / Prop Balance ---
+    getPropBalance() {
+        return this.state.propBalance || 50000;
+    },
+    setPropBalance(amount) {
+        this.state.propBalance = parseFloat(amount);
+        this.save();
+    },
 
     // --- Habits ---
     addHabit(habit) {
