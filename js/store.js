@@ -36,6 +36,14 @@ window.Store = {
             syncEl.innerHTML = '<i class="fa-solid fa-cloud text-gray-400"></i>'; // Default state
         }
 
+        // Listen for visibility change (Auto-Sync)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && this.currentUser && supabase) {
+                console.log('Tab visible: Auto-syncing data...');
+                this.loadFromSupabase(this.currentUser.id);
+            }
+        });
+
         return new Promise((resolve) => {
             if (supabase) {
                 // Check current session
@@ -113,6 +121,7 @@ window.Store = {
 
     async loadFromSupabase(uid) {
         try {
+            this.setSyncStatus('saving'); // Show activity
             const { data, error } = await supabase
                 .from('user_data')
                 .select('data')
@@ -123,6 +132,12 @@ window.Store = {
                 this.state = data.data;
                 this.runMigrations();
                 console.log('Data loaded from Supabase');
+                this.setSyncStatus('online'); // Back to online
+
+                // Refresh UI if router exists
+                if (window.router) {
+                    window.router.handleRoute();
+                }
             } else if (error && (error.code === 'PGRST116' || error.details?.includes('0 rows'))) { // No rows found
                 console.log('No data in Supabase, migrating LocalStorage...');
                 this.loadFromLocalStorage(); // Load local first
@@ -132,6 +147,7 @@ window.Store = {
             }
         } catch (error) {
             console.error('Error loading from Supabase:', error);
+            this.setSyncStatus('error');
             this.loadFromLocalStorage(); // Fallback
         }
     },
