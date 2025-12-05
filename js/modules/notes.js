@@ -4,6 +4,7 @@ window.NotesModule = {
         editingId: null,
         selectedColor: 'default',
         noteType: 'text', // 'text' or 'checklist'
+        notePeriod: 'day', // 'day', 'week', 'month', 'specific'
         checklistItems: [] // Array of {id, text, completed}
     },
 
@@ -32,8 +33,25 @@ window.NotesModule = {
         const monthNotes = [];
 
         filteredNotes.forEach(note => {
+            // Priority 1: Explicit Period
+            if (note.period) {
+                if (note.period === 'day') { todayNotes.push(note); return; }
+                if (note.period === 'week') { weekNotes.push(note); return; }
+                if (note.period === 'month') { monthNotes.push(note); return; }
+                if (note.period === 'specific' && note.dueDate) {
+                    // Start Legacy Date Logic for 'specific'
+                    const noteDate = new Date(note.dueDate);
+                    noteDate.setHours(0, 0, 0, 0);
+                    if (noteDate <= today) { todayNotes.push(note); }
+                    else if (noteDate <= nextWeek) { weekNotes.push(note); }
+                    else { monthNotes.push(note); }
+                    return;
+                }
+            }
+
+            // Fallback: Legacy Logic (No explicit period)
             if (!note.dueDate) {
-                todayNotes.push(note); // No date = Today/Inbox
+                todayNotes.push(note); // Default to Today
                 return;
             }
             const noteDate = new Date(note.dueDate);
@@ -48,8 +66,15 @@ window.NotesModule = {
             }
         });
 
-        // Sort by date (asc)
+        // Sort by date (asc), but keep 'day' period items at top if needed, or sort by creation
+        // For now, consistent sort by dueDate or createdAt
         const dateSort = (a, b) => {
+            // If explicit period 'day'/'week'/'month', use updatedAt or creation as secondary sort
+            // If specific date, use date
+            if (a.period !== 'specific' && b.period !== 'specific') {
+                // Sort by most recently updated
+                return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+            }
             if (!a.dueDate) return 1;
             if (!b.dueDate) return -1;
             return new Date(a.dueDate) - new Date(b.dueDate);
@@ -224,19 +249,43 @@ window.NotesModule = {
                         </div>
                         
                         <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-                            <!-- Type & Date -->
-                            <div class="flex gap-4">
-                                <div class="flex-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl flex">
-                                    <label class="flex-1 text-center cursor-pointer">
-                                        <input type="radio" name="type" value="text" checked onchange="NotesModule.setNoteType('text')" class="peer hidden">
-                                        <span class="block py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-black peer-checked:dark:text-white peer-checked:shadow-sm transition-all">Texto</span>
+                            <!-- Type & Period -->
+                            <div class="flex flex-col gap-3">
+                                <div class="flex gap-4">
+                                    <div class="flex-1 bg-gray-50 dark:bg-white/5 p-1 rounded-xl flex">
+                                        <label class="flex-1 text-center cursor-pointer">
+                                            <input type="radio" name="type" value="text" checked onchange="NotesModule.setNoteType('text')" class="peer hidden">
+                                            <span class="block py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-black peer-checked:dark:text-white peer-checked:shadow-sm transition-all">Texto</span>
+                                        </label>
+                                        <label class="flex-1 text-center cursor-pointer">
+                                            <input type="radio" name="type" value="checklist" onchange="NotesModule.setNoteType('checklist')" class="peer hidden">
+                                            <span class="block py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-black peer-checked:dark:text-white peer-checked:shadow-sm transition-all">Checklist</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-gray-50 dark:bg-white/5 p-1 rounded-xl flex overflow-x-auto">
+                                    <label class="flex-1 min-w-[60px] text-center cursor-pointer">
+                                        <input type="radio" name="period" value="day" checked onchange="NotesModule.setNotePeriod('day')" class="peer hidden">
+                                        <span class="block py-2 px-1 rounded-lg text-xs font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-rose-500 peer-checked:dark:text-rose-400 peer-checked:shadow-sm transition-all">Dia</span>
                                     </label>
-                                    <label class="flex-1 text-center cursor-pointer">
-                                        <input type="radio" name="type" value="checklist" onchange="NotesModule.setNoteType('checklist')" class="peer hidden">
-                                        <span class="block py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-black peer-checked:dark:text-white peer-checked:shadow-sm transition-all">Checklist</span>
+                                    <label class="flex-1 min-w-[60px] text-center cursor-pointer">
+                                        <input type="radio" name="period" value="week" onchange="NotesModule.setNotePeriod('week')" class="peer hidden">
+                                        <span class="block py-2 px-1 rounded-lg text-xs font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-amber-500 peer-checked:dark:text-amber-400 peer-checked:shadow-sm transition-all">Semana</span>
+                                    </label>
+                                    <label class="flex-1 min-w-[60px] text-center cursor-pointer">
+                                        <input type="radio" name="period" value="month" onchange="NotesModule.setNotePeriod('month')" class="peer hidden">
+                                        <span class="block py-2 px-1 rounded-lg text-xs font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-blue-500 peer-checked:dark:text-blue-400 peer-checked:shadow-sm transition-all">Mês</span>
+                                    </label>
+                                    <label class="flex-1 min-w-[60px] text-center cursor-pointer">
+                                        <input type="radio" name="period" value="specific" onchange="NotesModule.setNotePeriod('specific')" class="peer hidden">
+                                        <span class="block py-2 px-1 rounded-lg text-xs font-bold text-gray-500 peer-checked:bg-white peer-checked:dark:bg-zenox-surface peer-checked:text-purple-500 peer-checked:dark:text-purple-400 peer-checked:shadow-sm transition-all">Data</span>
                                     </label>
                                 </div>
-                                <input type="datetime-local" name="dueDate" id="note-dueDate" class="bg-gray-50 dark:bg-white/5 border-none rounded-xl px-4 text-sm text-gray-600 dark:text-gray-300 focus:ring-2 focus:ring-zenox-primary/20">
+
+                                <div id="date-picker-container" class="hidden">
+                                     <input type="datetime-local" name="dueDate" id="note-dueDate" class="w-full bg-gray-50 dark:bg-white/5 border-none rounded-xl px-4 py-2 text-sm text-gray-600 dark:text-gray-300 focus:ring-2 focus:ring-zenox-primary/20">
+                                </div>
                             </div>
 
                             <!-- Content -->
@@ -320,6 +369,15 @@ window.NotesModule = {
                 this.state.noteType = note.type || 'text';
                 this.state.checklistItems = note.items ? [...note.items] : [];
 
+                // Determine Period based on existing data
+                if (note.period) {
+                    this.state.notePeriod = note.period;
+                } else if (note.dueDate) {
+                    this.state.notePeriod = 'specific';
+                } else {
+                    this.state.notePeriod = 'day';
+                }
+
                 document.getElementById('note-title').value = note.title;
                 document.getElementById('note-content').value = note.content || '';
                 document.getElementById('note-tags').value = (note.tags || []).join(', ');
@@ -327,18 +385,25 @@ window.NotesModule = {
 
                 const typeRadio = form.querySelector(`input[name="type"][value="${this.state.noteType}"]`);
                 if (typeRadio) typeRadio.checked = true;
+
+                const periodRadio = form.querySelector(`input[name="period"][value="${this.state.notePeriod}"]`);
+                if (periodRadio) periodRadio.checked = true;
             }
         } else {
             this.state.editingId = null;
             this.state.selectedColor = 'default';
             this.state.noteType = 'text';
+            this.state.notePeriod = 'day'; // Default
             this.state.checklistItems = [];
             form.reset();
             const typeRadio = form.querySelector('input[name="type"][value="text"]');
             if (typeRadio) typeRadio.checked = true;
+            const periodRadio = form.querySelector('input[name="period"][value="day"]');
+            if (periodRadio) periodRadio.checked = true;
         }
 
         this.setNoteType(this.state.noteType);
+        this.setNotePeriod(this.state.notePeriod);
         modal.classList.remove('hidden');
         setTimeout(() => {
             modal.classList.remove('opacity-0');
@@ -389,14 +454,22 @@ window.NotesModule = {
     saveNote(event) {
         event.preventDefault();
         const formData = new FormData(event.target);
+
+        let dueDate = formData.get('dueDate');
+        // Clear dueDate if not specific period
+        if (this.state.notePeriod !== 'specific') {
+            dueDate = null;
+        }
+
         const noteData = {
             title: formData.get('title'),
             content: formData.get('content'),
             tags: formData.get('tags').split(',').map(t => t.trim()).filter(t => t),
             color: this.state.selectedColor,
             type: this.state.noteType,
+            period: this.state.notePeriod, // New Field
             items: this.state.checklistItems,
-            dueDate: formData.get('dueDate'),
+            dueDate: dueDate,
             status: 'todo', // Default status
             updatedAt: new Date().toISOString()
         };
@@ -425,6 +498,21 @@ window.NotesModule = {
             checklistArea.classList.remove('hidden');
             contentInput.removeAttribute('required');
             this.renderChecklistItems();
+        }
+    },
+
+    setNotePeriod(period) {
+        this.state.notePeriod = period;
+        const dateContainer = document.getElementById('date-picker-container');
+        const dateInput = document.getElementById('note-dueDate');
+
+        if (period === 'specific') {
+            dateContainer.classList.remove('hidden');
+            dateInput.setAttribute('required', 'required');
+        } else {
+            dateContainer.classList.add('hidden');
+            dateInput.removeAttribute('required');
+            dateInput.value = ''; // Clear value visually
         }
     },
 
