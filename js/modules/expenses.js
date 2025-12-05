@@ -135,6 +135,24 @@ window.ExpensesModule = {
         const currentYear = this.state.currentYear;
         const viewScope = this.state.viewScope;
 
+        // --- Multi-source Data Gathering ---
+
+        // 1. Manual Bank Investments (Static Balance)
+        // These are not transaction-based, so we show them regardless of date/filter?
+        // Or maybe just show them always at the top since they represent "Current State".
+        let bankRows = '';
+        const banks = Store.getBanks();
+        const bankDefs = Store.getBankDefinitions();
+
+        bankDefs.forEach(def => {
+            const bankData = banks[def.id];
+            if (bankData && bankData.invested > 0) {
+                bankRows += this.renderBankInvestmentRow(def, bankData);
+            }
+        });
+
+        // 2. Investment Transactions (History)
+
         const filtered = expenses.filter(e => {
             // Robust Date Parsing
             let d = new Date(e.date);
@@ -156,7 +174,7 @@ window.ExpensesModule = {
             return e.type === 'investment' && isYearMatch && isMonthMatch;
         });
 
-        if (filtered.length === 0) {
+        if (filtered.length === 0 && bankRows === '') {
             return `
                 <div class="text-center py-8 text-gray-500 dark:text-gray-400">
                     <i class="fa-solid fa-piggy-bank text-3xl mb-2 opacity-50"></i>
@@ -165,7 +183,33 @@ window.ExpensesModule = {
             `;
         }
 
-        return filtered.map(e => this.renderListItem(e)).join('');
+        return bankRows + filtered.map(e => this.renderListItem(e)).join('');
+    },
+
+    renderBankInvestmentRow(def, data) {
+        return `
+            <div class="p-4 rounded-2xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 shadow-sm hover:translate-x-1 transition-transform mb-3">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold text-gray-800 dark:text-white capitalize">${def.name}</h4>
+                        <div class="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                            <i class="fa-solid fa-lock"></i> Saldo Investido (Manual)
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-emerald-600 dark:text-emerald-500">R$ ${Store.formatCurrency(data.invested)}</div>
+                    </div>
+                     <div class="flex gap-2 ml-2">
+                        <button onclick="ExpensesModule.openBankModal('${def.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
     },
 
     getCategoryStyle(category) {
