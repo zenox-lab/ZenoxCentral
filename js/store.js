@@ -593,6 +593,26 @@ window.Store = {
         this.save();
     },
 
+    // --- Trades ---
+    getTrades() {
+        return this.state.trades || [];
+    },
+
+    addTrade(trade) {
+        if (!this.state.trades) this.state.trades = [];
+        // Ensure ID
+        if (!trade.id) trade.id = Date.now().toString();
+        this.state.trades.push(trade);
+        this.save();
+    },
+
+    deleteTrade(id) {
+        if (this.state.trades) {
+            this.state.trades = this.state.trades.filter(t => t.id !== id);
+            this.save();
+        }
+    },
+
     // --- Habits ---
     addHabit(habit) {
         habit.id = Date.now().toString();
