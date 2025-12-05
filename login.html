@@ -112,12 +112,14 @@
     <script>
         // === LOGICA DE LOGIN =======================================================
         document.getElementById('loginBtn').addEventListener('click', function () {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
 
             // Credenciais Hardcoded solicitadas
             if (user === 'Ventura' && pass === 'Chmod777$linux') {
                 sessionStorage.setItem('zenox_access_granted', 'true');
+                // Fallback for cached index.html that might still check localStorage
+                localStorage.setItem('zenox_access_granted', 'true');
                 window.location.href = 'index.html';
             } else {
                 alert('Acesso Negado: Credenciais Inválidas');
