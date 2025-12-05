@@ -9,7 +9,8 @@ window.ExpensesModule = {
         listTab: 'expenses', // 'expenses', 'income', 'investments'
         investmentFilter: 'month', // 'month', 'all'
         isCategoryManagerOpen: false,
-        categoryManagerType: 'expense'
+        categoryManagerType: 'expense',
+        isShowingAllOpenExpenses: false // New feature toggle
     },
 
     init() {
@@ -110,6 +111,12 @@ window.ExpensesModule = {
             const isMonthMatch = d.getMonth() === currentMonth;
             const isScopeMatch = viewScope === 'year' ? isYearMatch : (isYearMatch && isMonthMatch);
 
+            // Feature: Show All Open Expenses (Global)
+            // If toggle is ON, show ALL expenses that are NOT paid, effectively ignoring date scope
+            if (this.state.isShowingAllOpenExpenses && e.type === 'expense' && !e.paid) {
+                return true;
+            }
+
             if (activeTab === 'Todos') {
                 return isScopeMatch && e.type === 'expense';
             }
@@ -117,6 +124,11 @@ window.ExpensesModule = {
                 e.type === 'expense' &&
                 e.categoryType === activeTab;
         });
+
+        // Sort: If showing global open debts, prioritize oldest first
+        if (this.state.isShowingAllOpenExpenses) {
+            filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
 
         if (filtered.length === 0) {
             return `
@@ -664,13 +676,23 @@ window.ExpensesModule = {
                     </div>
                     <!-- Tabs (Only for Expenses) -->
                     ${this.state.listTab === 'expenses' ? `
-                        <div class="px-4 md:px-6 pt-4 flex gap-1 border-b border-gray-100 dark:border-white/5 overflow-x-auto no-scrollbar">
+                        <div class="px-4 md:px-6 pt-4 flex gap-1 border-b border-gray-100 dark:border-white/5 overflow-x-auto no-scrollbar items-center">
                             ${['Todos', 'Fixa', 'Variável', 'Extra', 'Adicional'].map(tab => `
                                 <button onclick="ExpensesModule.switchTab('${tab}')" 
                                     class="px-6 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${this.state.activeTab === tab ? 'border-rose-500 text-rose-600 dark:text-rose-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}">
                                     ${tab} (${this.getCountByTab(tab)})
                                 </button>
                             `).join('')}
+
+                            <!-- Global Open Debts Toggle -->
+                            <button onclick="ExpensesModule.toggleShowAllOpen()" 
+                                class="ml-auto px-4 py-1.5 text-xs font-bold rounded-lg border transition-all flex items-center gap-2 whitespace-nowrap ${this.state.isShowingAllOpenExpenses
+                    ? 'bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-500/30'
+                    : 'bg-white dark:bg-white/5 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10'
+                }">
+                                <i class="fa-solid fa-filter-circle-dollar"></i>
+                                ${this.state.isShowingAllOpenExpenses ? 'Mostrando Dívidas (Todas)' : 'Ver Dívidas em Aberto'}
+                            </button>
                         </div>
                     ` : ''}
 
@@ -929,6 +951,11 @@ window.ExpensesModule = {
     setListTab(tab) {
         this.state.listTab = tab;
         router.handleRoute();
+    },
+
+    toggleShowAllOpen() {
+        this.state.isShowingAllOpenExpenses = !this.state.isShowingAllOpenExpenses;
+        router.handleRoute(); // Refresh UI
     },
 
     setViewScope(scope) {
