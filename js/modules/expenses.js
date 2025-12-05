@@ -1690,6 +1690,12 @@ window.ExpensesModule = {
                             </div>
 
                             <div class="space-y-1">
+                                <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Adicionar ao Saldo (+)</label>
+                                <input type="number" name="incrementBalance" step="0.01" placeholder="Ex: 200,00" class="w-full px-4 py-2.5 text-sm rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-500/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-gray-800 dark:text-white placeholder-emerald-700/30 dark:placeholder-emerald-500/30">
+                                <p class="text-[10px] text-gray-400 mt-1">Valor digitado aqui será SOMADO ao saldo atual.</p>
+                            </div>
+
+                            <div class="space-y-1">
                                 <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Investido (R$)</label>
                                 <input type="number" name="invested" step="0.01" required class="w-full px-4 py-2.5 text-sm rounded-xl bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all text-gray-800 dark:text-white">
                             </div>
@@ -1713,11 +1719,13 @@ window.ExpensesModule = {
         const title = document.getElementById('bank-modal-title');
         const idInput = document.getElementById('bank-modal-id');
         const balanceInput = document.querySelector('#bank-form input[name="balance"]');
+        const incrementInput = document.querySelector('#bank-form input[name="incrementBalance"]');
         const investedInput = document.querySelector('#bank-form input[name="invested"]');
 
-        title.innerText = `Editar ${bankName} `;
+        title.innerText = `Editar ${bankName}`;
         idInput.value = bankId;
         balanceInput.value = bankData.balance;
+        if (incrementInput) incrementInput.value = ''; // Reset increment field
         investedInput.value = bankData.invested;
 
         modal.classList.remove('hidden');
@@ -1744,8 +1752,13 @@ window.ExpensesModule = {
         event.preventDefault();
         const formData = new FormData(event.target);
         const bankId = formData.get('bankId');
-        const balance = parseFloat(formData.get('balance'));
+        let balance = parseFloat(formData.get('balance'));
+        const increment = parseFloat(formData.get('incrementBalance'));
         const invested = parseFloat(formData.get('invested'));
+
+        if (!isNaN(increment) && increment !== 0) {
+            balance += increment;
+        }
 
         Store.setBankData(bankId, { balance, invested });
         this.closeBankModal();
