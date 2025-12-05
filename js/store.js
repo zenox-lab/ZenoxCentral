@@ -251,6 +251,7 @@ window.Store = {
     },
 
     setSyncStatus(status) {
+        return; // UI Element removed
         const el = document.getElementById('sync-status');
         if (!el) return;
 
