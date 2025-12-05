@@ -13,14 +13,39 @@ window.WalletModule = {
     },
 
     loadData() {
-        const stored = localStorage.getItem('zenox_wallet_data');
-        if (stored) {
-            this.data = JSON.parse(stored);
+        // Load from Central Store (Supabase/LocalStorage handled there)
+        const storeData = Store.getWalletData();
+
+        // Migration: Check if we have old data in localStorage BUT nothing in Store
+        const oldData = localStorage.getItem('zenox_wallet_data');
+        if (oldData && (!storeData.assets || storeData.assets.length === 0)) {
+            console.log('Migrating Wallet data to Store...');
+            try {
+                this.data = JSON.parse(oldData);
+                this.saveData(); // Save immediately to Store
+                // Optional: localStorage.removeItem('zenox_wallet_data');
+            } catch (e) {
+                console.error('Migration failed', e);
+                this.data = storeData;
+            }
+        } else {
+            this.data = storeData;
+        }
+
+        // Initialize defaults if missing
+        if (!this.data.assets) this.data.assets = [];
+        if (!this.data.settings) this.data.settings = { apiKey: '' };
+        if (!this.data.sectors) {
+            // Need to ensure MarketData is loaded or handle this safely
+            if (window.MarketData && window.MarketData.sectors) {
+                this.data.sectors = JSON.parse(JSON.stringify(window.MarketData.sectors));
+            }
         }
     },
 
     saveData() {
-        localStorage.setItem('zenox_wallet_data', JSON.stringify(this.data));
+        // Save to Central Store
+        Store.saveWalletData(this.data);
     },
 
     render() {
@@ -72,7 +97,7 @@ window.WalletModule = {
     },
 
     renderPortfolio() {
-        if (this.data.assets.length === 0) {
+        if (!this.data.assets || this.data.assets.length === 0) {
             return `
                 <div class="bg-white dark:bg-zenox-surface rounded-2xl p-12 text-center border border-gray-100 dark:border-white/5 shadow-card">
                     <div class="w-20 h-20 bg-gray-100 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -207,7 +232,7 @@ window.WalletModule = {
     },
 
     renderMosaic() {
-        if (this.data.assets.length === 0) {
+        if (!this.data.assets || this.data.assets.length === 0) {
             return this.renderPortfolio(); // Show empty state
         }
 
@@ -397,7 +422,7 @@ window.WalletModule = {
                     </form>
                 </div>
             </div>
-            `;
+        `;
         document.getElementById('wallet-modals').innerHTML = modalHtml;
 
         // Initialize state
@@ -683,7 +708,7 @@ window.WalletModule = {
             for (let asset of this.data.assets) {
                 if (asset.status === 'CLOSED') continue;
 
-                const response = await fetch(\`https://finnhub.io/api/v1/quote?symbol=\${asset.symbol}&token=\${apiKey}\`);
+                const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${asset.symbol}&token=${apiKey}`);
                 const data = await response.json();
 
                 if (data.c) { // 'c' is the current price in Finnhub response

@@ -24,6 +24,10 @@ window.Store = {
             { id: 'mercadoPago', name: 'Mercado Pago' },
             { id: 'other', name: 'Outros / Carteira' }
         ],
+        wallet: {
+            assets: [],
+            settings: { apiKey: '' }
+        },
         dailyMetrics: {}
     },
 
@@ -72,7 +76,7 @@ window.Store = {
             this.setSyncStatus('online');
 
             // Clear local cache to ensure we rely only on DB
-            localStorage.removeItem(this.STORAGE_KEY);
+            // localStorage.removeItem(this.STORAGE_KEY); // FIXED: Do not clear immediately to prevent data loss if DB is empty
 
             await this.loadFromSupabase(session.user.id);
 
@@ -639,6 +643,20 @@ window.Store = {
             { id: '1', title: 'Ideias de Projeto', content: 'Criar um dashboard unificado para trades e finanças.', tags: ['Dev', 'Ideia'], updatedAt: '2025-11-29T10:00:00Z' },
             { id: '2', title: 'Lista de Compras', content: '- Café\n- Leite\n- Pão integral', tags: ['Pessoal'], updatedAt: '2025-11-28T18:30:00Z' },
         ];
+    },
+
+    // --- Wallet (New Integration) ---
+    getWalletData() {
+        if (!this.state.wallet) {
+            this.state.wallet = { assets: [], settings: { apiKey: '' } };
+            this.save();
+        }
+        return this.state.wallet;
+    },
+
+    saveWalletData(data) {
+        this.state.wallet = data;
+        this.save();
     },
 
     // --- Helpers ---
