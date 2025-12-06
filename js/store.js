@@ -598,6 +598,20 @@ window.Store = {
         return this.state.trades || [];
     },
 
+    // --- Trade Editing State ---
+    setEditingTrade(id) {
+        this.state.editingTradeId = id;
+    },
+
+    consumeEditingTrade() {
+        const id = this.state.editingTradeId;
+        if (id) {
+            this.state.editingTradeId = null;
+            return this.state.trades.find(t => t.id === id);
+        }
+        return null;
+    },
+
     addTrade(trade) {
         if (!this.state.trades) this.state.trades = [];
         // Ensure ID

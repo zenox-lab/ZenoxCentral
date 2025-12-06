@@ -391,11 +391,8 @@ window.EquityModule = {
     },
 
     editTrade(id) {
-        const trades = Store.getTrades();
-        const trade = trades.find(t => t.id === id);
-        if (trade && window.TradesModule) {
-            window.TradesModule.openModal(trade);
-        }
+        Store.setEditingTrade(id);
+        router.navigate('trades');
     },
 
     deleteTrade(id) {

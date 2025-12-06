@@ -646,6 +646,11 @@ window.TradesModule = {
     },
 
     afterRender() {
-        // Any post-render logic
+        const editingTrade = Store.consumeEditingTrade();
+        if (editingTrade) {
+            setTimeout(() => {
+                this.openModal(editingTrade);
+            }, 100);
+        }
     }
 };
