@@ -1,4 +1,8 @@
 window.EquityModule = {
+    state: {
+        historyFilter: 'day' // 'day' or 'month'
+    },
+
     render() {
         const trades = Store.getTrades();
         const stats = this.calculateStats(trades);
@@ -147,14 +151,27 @@ window.EquityModule = {
 
                 <!-- General Summary Footer -->
                 <div class="bg-gray-900 dark:bg-black/40 p-6 rounded-2xl border border-gray-800 dark:border-white/5">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-gray-400">
-                            <i class="fa-solid fa-fingerprint text-sm"></i>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-gray-400">
+                                <i class="fa-solid fa-fingerprint text-sm"></i>
+                            </div>
+                            <h3 class="font-bold text-white">Resumo Geral & Histórico</h3>
                         </div>
-                        <h3 class="font-bold text-white">Resumo Geral</h3>
+                        
+                        <!-- Filter Toggle -->
+                        <div class="flex bg-gray-800 rounded-lg p-1">
+                            <button onclick="EquityModule.setHistoryFilter('day')" class="px-4 py-1.5 rounded-md text-xs font-medium transition-all ${this.state.historyFilter === 'day' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}">
+                                Do Dia
+                            </button>
+                            <button onclick="EquityModule.setHistoryFilter('month')" class="px-4 py-1.5 rounded-md text-xs font-medium transition-all ${this.state.historyFilter === 'month' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}">
+                                Do Mês
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                         <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700 text-center">
                             <p class="text-xs text-gray-400 mb-1">Total de Operações</p>
                             <p class="text-xl font-bold text-white">${stats.totalOps}</p>
@@ -171,6 +188,14 @@ window.EquityModule = {
                             <p class="text-xs text-gray-400 mb-1">Retorno (%)</p>
                             <p class="text-xl font-bold ${stats.returnPercentage >= 0 ? 'text-emerald-400' : 'text-red-400'}">${stats.returnPercentage >= 0 ? '+' : ''}${stats.returnPercentage}%</p>
                         </div>
+                    </div>
+
+                    <!-- Trade History List -->
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-semibold text-gray-400 mb-4 uppercase tracking-wider">
+                            ${this.state.historyFilter === 'day' ? 'Operações de Hoje' : 'Todas as Operações do Mês'}
+                        </h4>
+                        ${this.renderTradeList(trades)}
                     </div>
                 </div>
             </div>
@@ -289,12 +314,94 @@ window.EquityModule = {
                         grid: { color: 'rgba(128, 128, 128, 0.1)' },
                         ticks: { color: '#9ca3af' }
                     },
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#9ca3af' }
-                    }
                 }
             }
         });
+    },
+
+    // --- History & Actions Helpers ---
+
+    setHistoryFilter(filter) {
+        this.state.historyFilter = filter;
+        router.handleRoute(); // Re-render
+    },
+
+    renderTradeList(allTrades) {
+        const today = new Date().toISOString().split('T')[0];
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        // 1. Filter trades based on state
+        const filteredTrades = allTrades.filter(t => {
+            if (this.state.historyFilter === 'day') {
+                return t.date === today;
+            } else {
+                const d = new Date(t.date);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            }
+        });
+
+        // 2. Sort by date desc (newest first)
+        const sorted = [...filteredTrades].reverse();
+
+        if (sorted.length === 0) {
+            return `
+                <div class="text-center py-8 bg-gray-800/30 rounded-xl border border-dashed border-gray-700">
+                    <p class="text-gray-500 text-sm">Nenhuma operação encontrada para este período.</p>
+                </div>
+            `;
+        }
+
+        return sorted.map(t => {
+            const resultVal = parseFloat(t.result);
+            const isWin = resultVal >= 0;
+            return `
+                <div class="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl border border-gray-700 hover:border-gray-600 transition-colors group">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg ${isWin ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'} flex items-center justify-center font-bold text-lg">
+                            ${isWin ? '<i class="fa-solid fa-arrow-trend-up"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>'}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white text-sm">${t.asset}</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 uppercase">${t.type}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">${new Date(t.date).toLocaleDateString('pt-BR')} • ${t.strategy}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-6">
+                        <span class="font-bold font-mono text-base ${isWin ? 'text-emerald-400' : 'text-red-400'}">
+                            ${isWin ? '+' : ''}${Store.formatCurrency(resultVal)}
+                        </span>
+                        
+                        <!-- Actions -->
+                        <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="EquityModule.editTrade('${t.id}')" class="w-8 h-8 rounded-lg bg-gray-700 hover:bg-blue-600 text-gray-400 hover:text-white transition-all flex items-center justify-center" title="Editar">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="EquityModule.deleteTrade('${t.id}')" class="w-8 h-8 rounded-lg bg-gray-700 hover:bg-red-600 text-gray-400 hover:text-white transition-all flex items-center justify-center" title="Excluir">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    editTrade(id) {
+        const trades = Store.getTrades();
+        const trade = trades.find(t => t.id === id);
+        if (trade && window.TradesModule) {
+            window.TradesModule.openModal(trade);
+        }
+    },
+
+    deleteTrade(id) {
+        if (confirm('Tem certeza que deseja excluir esta operação?')) {
+            Store.deleteTrade(id);
+            router.handleRoute(); // Re-render
+        }
     }
 };

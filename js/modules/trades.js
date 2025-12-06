@@ -116,6 +116,7 @@ window.TradesModule = {
                     </div>
 
                     <form id="trade-form" onsubmit="TradesModule.handleSubmit(event)" class="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
+                        <input type="hidden" name="trade_id" id="trade-id-input">
                         
                         <!-- Tabs -->
                         <div class="flex bg-gray-100 dark:bg-white/5 rounded-lg p-1 mb-4">
@@ -541,11 +542,17 @@ window.TradesModule = {
         router.handleRoute(); // Re-render
     },
 
-    openModal(date = null) {
+    openModal(data = null) {
         const modal = document.getElementById('trade-modal');
         const content = document.getElementById('trade-modal-content');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+
+        // Reset form
+        const form = document.getElementById('trade-form');
+        form.reset();
+        document.getElementById('trade-id-input').value = '';
+
         // Small delay for animation
         setTimeout(() => {
             modal.classList.remove('opacity-0');
@@ -553,11 +560,38 @@ window.TradesModule = {
             content.classList.add('scale-100');
         }, 10);
 
-        if (date) {
+        if (data && typeof data === 'object' && data.id) {
+            // Edit Mode
+            document.getElementById('trade-id-input').value = data.id;
+
+            // Populate fields
+            const setVal = (name, val) => {
+                const input = form.querySelector(`[name="${name}"]`);
+                if (input) input.value = val;
+            };
+
+            setVal('date', data.date);
+            setVal('asset', data.asset);
+            setVal('type', data.type);
+            setVal('result', data.result);
+            setVal('contracts', data.contracts || 1);
+            setVal('timeframe', data.timeframe || '5m');
+            setVal('notes', data.notes || '');
+
+            // Set trade type button styles
+            this.setTradeType(data.type);
+
+            // Populate other tabs if data exists (future proofing)
+            if (data.stop_loss) setVal('stop_loss', data.stop_loss);
+            if (data.take_profit) setVal('take_profit', data.take_profit);
+            if (data.strategy) setVal('strategy', data.strategy);
+            if (data.checklist) setVal('checklist', data.checklist);
+            if (data.emotion) this.setEmotion(data.emotion);
+
+        } else if (typeof data === 'string') {
+            // Date string passed
             const dateInput = document.querySelector('#trade-form input[name="date"]');
-            if (dateInput) {
-                dateInput.value = date;
-            }
+            if (dateInput) dateInput.value = data;
         } else {
             // Default to today if no date provided
             const dateInput = document.querySelector('#trade-form input[name="date"]');
@@ -583,19 +617,30 @@ window.TradesModule = {
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
+        const tradeId = formData.get('trade_id');
 
         const trade = {
+            id: tradeId || Date.now().toString(), // Keep ID if editing
             date: formData.get('date'),
             asset: formData.get('asset'),
             type: formData.get('type'),
             result: parseFloat(formData.get('result')),
-            strategy: 'Manual', // Default for now
-            contracts: 1,
-            timeframe: '5m',
-            notes: ''
+            strategy: formData.get('strategy') || 'Manual',
+            contracts: formData.get('contracts') || 1,
+            timeframe: formData.get('timeframe') || '5m',
+            notes: formData.get('notes') || '',
+            stop_loss: formData.get('stop_loss'),
+            take_profit: formData.get('take_profit'),
+            checklist: formData.get('checklist'),
+            emotion: formData.get('emotion')
         };
 
-        Store.addTrade(trade);
+        if (tradeId) {
+            Store.updateTrade(trade);
+        } else {
+            Store.addTrade(trade);
+        }
+
         this.closeModal();
         router.handleRoute(); // Re-render to show new trade
     },

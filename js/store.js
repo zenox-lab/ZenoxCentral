@@ -606,6 +606,14 @@ window.Store = {
         this.save();
     },
 
+    updateTrade(updatedTrade) {
+        const index = this.state.trades.findIndex(t => t.id === updatedTrade.id);
+        if (index !== -1) {
+            this.state.trades[index] = updatedTrade;
+            this.save();
+        }
+    },
+
     deleteTrade(id) {
         if (this.state.trades) {
             this.state.trades = this.state.trades.filter(t => t.id !== id);
