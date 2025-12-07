@@ -343,7 +343,7 @@ window.WalletModule = {
 
         const modalHtml = `
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" id="add-asset-modal">
-                <div class="bg-white dark:bg-zenox-surface w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 p-6 m-4">
+                <div class="bg-white dark:bg-zenox-surface w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 p-6 m-4 max-h-[90vh] overflow-y-auto">
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-xl font-bold text-gray-800 dark:text-white">${asset ? 'Editar Ativo' : 'Adicionar Ativo'}</h3>
                         <button onclick="document.getElementById('add-asset-modal').remove()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -363,33 +363,39 @@ window.WalletModule = {
                             </label>
                         </div>
 
-                        <!-- Asset Type -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo de Ativo</label>
-                            <select id="asset-type-select" onchange="WalletModule.handleTypeChange()" class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="stock" ${asset && asset.type && asset.type !== 'WATCH' && asset.type === 'stock' ? 'selected' : ''}>Ação (S&P 500)</option>
-                                <option value="index" ${asset && asset.type === 'index' ? 'selected' : ''}>Índice / ETF</option>
-                                <option value="currency" ${asset && asset.type === 'currency' ? 'selected' : ''}>Moeda (Forex)</option>
-                                <option value="crypto" ${asset && asset.type === 'crypto' ? 'selected' : ''}>Criptomoeda</option>
-                            </select>
+                        <!-- SEARCH BAR (New) -->
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pesquisar Ativo (S&P500 / NASDAQ)</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                                </div>
+                                <input type="text" id="asset-search-input" 
+                                       class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-gray-400" 
+                                       placeholder="Digite o símbolo (ex: AAPL, TSLA)..."
+                                       value="${asset ? asset.symbol : ''}"
+                                       autocomplete="off"
+                                       oninput="WalletModule.handleSearchInput()">
+                            </div>
+                            <!-- Search Results Dropdown -->
+                            <div id="search-results-container" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-white/10 hidden max-h-60 overflow-y-auto">
+                                <!-- Populated by JS -->
+                            </div>
                         </div>
 
-                        <!-- Sector Select (Hidden by default) -->
-                        <div id="sector-container">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Setor</label>
-                            <select id="sector-select" onchange="WalletModule.handleSectorChange()" class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Selecione um Setor</option>
-                                ${Object.keys(window.MarketData.sectors).map(sector => `<option value="${sector}">${sector}</option>`).join('')}
-                            </select>
-                        </div>
+                        <!-- Hidden Symbol Input (for form submission) -->
+                        <input type="hidden" name="symbol" id="symbol-input-hidden" value="${asset ? asset.symbol : ''}">
 
-                        <!-- Asset Symbol Select -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ativo</label>
-                            <select name="symbol" id="symbol-select" required class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="">Selecione primeiro o tipo/setor</option>
-                                ${asset ? `<option value="${asset.symbol}" selected>${asset.symbol}</option>` : ''}
-                            </select>
+                        <!-- Asset Type (Auto-selected but manually changeable) -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tipo</label>
+                                <select id="asset-type-select" name="type" class="w-full px-4 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="stock" ${!asset || asset.type === 'stock' ? 'selected' : ''}>Ação</option>
+                                    <option value="index" ${asset && asset.type === 'index' ? 'selected' : ''}>ETF / Índice</option>
+                                    <option value="crypto" ${asset && asset.type === 'crypto' ? 'selected' : ''}>Cripto</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div id="trade-details-container" class="space-y-4">
@@ -425,12 +431,10 @@ window.WalletModule = {
         `;
         document.getElementById('wallet-modals').innerHTML = modalHtml;
 
-        // Initialize state
-        if (!asset) {
-            this.handleTypeChange();
-        }
-
         this.toggleWatchlistFields();
+
+        // Focus search input
+        setTimeout(() => document.getElementById('asset-search-input').focus(), 100);
     },
 
     toggleWatchlistFields() {
@@ -593,12 +597,22 @@ window.WalletModule = {
         event.preventDefault();
         const formData = new FormData(event.target);
         const assetId = formData.get('assetId');
-        const rawSymbol = formData.get('symbol');
+
+        // Use hidden input for symbol, or fallback to search value (if user typed manually but didn't click result)
+        let rawSymbol = formData.get('symbol');
+        if (!rawSymbol) rawSymbol = document.getElementById('asset-search-input').value.split(' - ')[0].trim().toUpperCase();
+
+        if (!rawSymbol) {
+            alert('Por favor, selecione ou digite um ativo válido.');
+            return;
+        }
+
         const isWatchlist = document.getElementById('watchlist-toggle').checked;
+        const typeSelect = document.getElementById('asset-type-select').value;
 
         const assetData = {
             symbol: rawSymbol,
-            type: isWatchlist ? 'WATCH' : 'TRADE',
+            type: isWatchlist ? 'WATCH' : typeSelect, // Use selected type if not watchlist
             entryPrice: isWatchlist ? 0 : parseFloat(formData.get('entryPrice')),
             quantity: isWatchlist ? 0 : parseInt(formData.get('quantity')),
             stopLoss: isWatchlist ? 0 : parseFloat(formData.get('stopLoss')),
@@ -614,8 +628,7 @@ window.WalletModule = {
                 this.data.assets[index] = {
                     ...existing,
                     ...assetData,
-                    id: assetId,
-                    type: isWatchlist ? 'WATCH' : existing.type
+                    id: assetId
                 };
             }
         } else {
@@ -624,14 +637,6 @@ window.WalletModule = {
                 status: 'OPEN',
                 ...assetData
             };
-
-            const typeSelect = document.getElementById('asset-type-select').value;
-            if (isWatchlist) {
-                newAsset.type = 'WATCH';
-            } else {
-                newAsset.type = typeSelect;
-            }
-
             this.data.assets.push(newAsset);
         }
 
@@ -688,6 +693,131 @@ window.WalletModule = {
         this.saveData();
         document.getElementById('settings-modal').remove();
         alert('Configurações salvas com sucesso!');
+    },
+
+    // --- Asset Search & Autocomplete ---
+
+    async searchAssets(query) {
+        const apiKey = this.data.settings.apiKey;
+        if (!query || query.length < 2 || !apiKey) return [];
+
+        try {
+            const response = await fetch(`https://finnhub.io/api/v1/search?q=${query}&token=${apiKey}`);
+            const data = await response.json();
+
+            if (data.result) {
+                // Filter for US Stocks/ETFs (Common exchanges)
+                return data.result.filter(item =>
+                    // !item.symbol.includes('.') && // Filter out obscure suffixes if needed
+                    ['US', 'NASDAQ', 'NYSE', 'AMEX'].includes(item.description.split(' ').pop()) || // Rough check
+                    true // For now return all, let user decide, or refine filter:
+                ).slice(0, 10); // Limit results
+            }
+            return [];
+        } catch (e) {
+            console.error('Search error:', e);
+            return [];
+        }
+    },
+
+    debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+    },
+
+    handleSearchInput() {
+        const input = document.getElementById('asset-search-input');
+        const resultsContainer = document.getElementById('search-results-container');
+        const query = input.value.trim();
+
+        if (query.length < 2) {
+            resultsContainer.classList.add('hidden');
+            return;
+        }
+
+        // Show loading state
+        resultsContainer.innerHTML = '<div class="p-3 text-sm text-gray-500 text-center"><i class="fa-solid fa-circle-notch fa-spin"></i> Buscando...</div>';
+        resultsContainer.classList.remove('hidden');
+
+        // Debounced search
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(async () => {
+            const results = await this.searchAssets(query);
+            this.renderSearchResults(results);
+        }, 500);
+    },
+
+    renderSearchResults(results) {
+        const container = document.getElementById('search-results-container');
+
+        if (!results || results.length === 0) {
+            container.innerHTML = '<div class="p-3 text-sm text-gray-500 text-center">Nenhum resultado encontrado.</div>';
+            return;
+        }
+
+        container.innerHTML = results.map(item => `
+            <div onclick="WalletModule.selectSearchResult('${item.symbol}', '${item.description}', '${item.type}')" 
+                 class="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer border-b border-gray-100 dark:border-white/5 last:border-0 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs">
+                        ${item.symbol.substring(0, 2)}
+                    </div>
+                    <div>
+                        <div class="font-bold text-gray-800 dark:text-white text-sm">${item.symbol}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">${item.description}</div>
+                    </div>
+                </div>
+                <div class="text-[10px] px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 uppercase">
+                    ${item.type || 'Stock'}
+                </div>
+            </div>
+        `).join('');
+    },
+
+    async selectSearchResult(symbol, description, type) {
+        // 1. Populate Hidden/Visible Fields
+        document.getElementById('symbol-input-hidden').value = symbol;
+
+        // Update Search Input to show selected
+        const searchInput = document.getElementById('asset-search-input');
+        searchInput.value = `${symbol} - ${description}`;
+
+        // Hide Results
+        document.getElementById('search-results-container').classList.add('hidden');
+
+        // 2. Auto-detect Type
+        const typeSelect = document.getElementById('asset-type-select');
+        if (type && type.toLowerCase().includes('stock')) typeSelect.value = 'stock';
+        else if (type && type.toLowerCase().includes('etf')) typeSelect.value = 'index';
+        else if (type && type.toLowerCase().includes('crypto')) typeSelect.value = 'crypto';
+        else typeSelect.value = 'stock'; // Default
+
+        // Trigger type change to update UI
+        this.handleTypeChange();
+
+        // 3. Fetch Current Price
+        searchInput.disabled = true;
+        searchInput.classList.add('opacity-50', 'cursor-not-allowed');
+
+        try {
+            const apiKey = this.data.settings.apiKey;
+            const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`);
+            const data = await response.json();
+
+            if (data.c) {
+                const priceInputs = document.querySelectorAll('input[name="entryPrice"]');
+                priceInputs.forEach(input => input.value = data.c);
+            }
+        } catch (e) {
+            console.error('Error fetching price:', e);
+        } finally {
+            searchInput.disabled = false;
+            searchInput.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     },
 
     async updateQuotes() {
