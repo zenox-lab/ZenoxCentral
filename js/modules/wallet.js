@@ -34,7 +34,7 @@ window.WalletModule = {
 
         // Initialize defaults if missing
         if (!this.data.assets) this.data.assets = [];
-        if (!this.data.settings) this.data.settings = { apiKey: '' };
+        if (!this.data.settings.apiKey) this.data.settings = { apiKey: 'd4mv97pr01qsn6g8kq00d4mv97pr01qsn6g8kq0g' };
         if (!this.data.sectors) {
             // Need to ensure MarketData is loaded or handle this safely
             if (window.MarketData && window.MarketData.sectors) {

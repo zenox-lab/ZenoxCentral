@@ -26,7 +26,7 @@ window.Store = {
         ],
         wallet: {
             assets: [],
-            settings: { apiKey: '' }
+            settings: { apiKey: 'd4mv97pr01qsn6g8kq00d4mv97pr01qsn6g8kq0g' }
         },
         dailyMetrics: {}
     },
@@ -228,6 +228,7 @@ window.Store = {
     setDefaultState() {
         this.state = {
             theme: 'dark',
+            wallet: { assets: [], settings: { apiKey: 'd4mv97pr01qsn6g8kq00d4mv97pr01qsn6g8kq0g' } },
             propBalance: 50000, // Syncable balance
             trades: [],
             expenses: [],
@@ -289,10 +290,8 @@ window.Store = {
     },
 
     save() {
-        // Save to LocalStorage ONLY if NOT logged in
-        if (!this.currentUser) {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
-        }
+        // Always save to LocalStorage as backup/cache
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.state));
 
         // Save to Supabase (Debounced)
         if (this.currentUser) {
@@ -769,7 +768,7 @@ window.Store = {
     // --- Wallet (New Integration) ---
     getWalletData() {
         if (!this.state.wallet) {
-            this.state.wallet = { assets: [], settings: { apiKey: '' } };
+            this.state.wallet = { assets: [], settings: { apiKey: 'd4mv97pr01qsn6g8kq00d4mv97pr01qsn6g8kq0g' } };
             this.save();
         }
         return this.state.wallet;

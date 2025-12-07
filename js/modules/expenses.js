@@ -88,15 +88,28 @@ window.ExpensesModule = {
             // --- Flow Logic (Stats for the period) ---
             if (isScopeMatch) {
                 if (e.type === 'income') income += parseFloat(e.amount);
-                if (e.type === 'expense') expense += parseFloat(e.amount);
+                if (e.type === 'expense') {
+                    // Only sum if it counts (not a direct Pix debit)
+                    if (this.shouldCountAsExpense(e)) {
+                        expense += parseFloat(e.amount);
+                    }
+                }
                 if (e.type === 'investment') investment += parseFloat(e.amount);
             }
         });
 
         // Balance = Income + Investment - Expense (User requested: soma da receita + investimentos)
+        // Pix Debits are EXCLUDED from the expense total per user request
         const balance = income + investment - expense;
 
         return { income, expense, investment, balance, accumulatedInvestment };
+    },
+
+    // New Helper to check if an expense counts towards the monthly total
+    shouldCountAsExpense(e) {
+        // If it's a Pix Debit, it does NOT count as a monthly expense (it just deducted balance)
+        if (e.isPixDebit) return false;
+        return true;
     },
 
     renderExpenseList(expenses) {
@@ -313,8 +326,10 @@ window.ExpensesModule = {
                             <span>${new Date(e.date).toLocaleDateString('pt-BR')}</span>
                             <span>•</span>
                             <span>${e.category}</span>
+                            <span>${e.category}</span>
                             ${e.paymentMode === 'parcelado' ? '<span class="text-orange-500">• Parcelado</span>' : ''}
                             ${e.isRecurring ? '<span class="text-blue-500">• Recorrente</span>' : ''}
+                            ${e.isPixDebit ? '<span class="text-purple-500">• <i class="fa-solid fa-bolt text-[10px]"></i> Pix</span>' : ''}
                         </div>
                     </div>
                 </div>
@@ -499,9 +514,14 @@ window.ExpensesModule = {
                                         <div class="flex items-center gap-2">
                                             <span class="font-semibold text-sm text-gray-800 dark:text-white">Nubank</span>
                                         </div>
-                                        <button onclick="ExpensesModule.openBankModal('nubank')" class="text-xs text-gray-500 hover:text-purple-600 dark:text-gray-400">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
+                                        <div class="flex gap-2">
+                                            <button onclick="ExpensesModule.openPixModal('nubank')" title="Pagar com Pix" class="w-6 h-6 flex items-center justify-center rounded-full bg-purple-100 hover:bg-purple-200 text-purple-600 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-400 transition-colors">
+                                                <i class="fa-solid fa-bolt text-xs"></i>
+                                            </button>
+                                            <button onclick="ExpensesModule.openBankModal('nubank')" class="text-xs text-gray-500 hover:text-purple-600 dark:text-gray-400">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="flex justify-between items-end">
                                         <div>
@@ -529,9 +549,14 @@ window.ExpensesModule = {
                                         <div class="flex items-center gap-2">
                                             <span class="font-semibold text-sm text-gray-800 dark:text-white">Mercado Pago</span>
                                         </div>
-                                        <button onclick="ExpensesModule.openBankModal('mercadoPago')" class="text-xs text-gray-500 hover:text-blue-600 dark:text-gray-400">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
+                                        <div class="flex gap-2">
+                                             <button onclick="ExpensesModule.openPixModal('mercadoPago')" title="Pagar com Pix" class="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-400 transition-colors">
+                                                <i class="fa-solid fa-bolt text-xs"></i>
+                                            </button>
+                                            <button onclick="ExpensesModule.openBankModal('mercadoPago')" class="text-xs text-gray-500 hover:text-blue-600 dark:text-gray-400">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="flex justify-between items-end">
                                         <div>
@@ -559,9 +584,14 @@ window.ExpensesModule = {
                                         <div class="flex items-center gap-2">
                                             <span class="font-semibold text-sm text-gray-800 dark:text-white">Outros / Carteira</span>
                                         </div>
-                                        <button onclick="ExpensesModule.openBankModal('other')" class="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400">
-                                            <i class="fa-solid fa-pen"></i>
-                                        </button>
+                                        <div class="flex gap-2">
+                                             <button onclick="ExpensesModule.openPixModal('other')" title="Pagar com Pix" class="w-6 h-6 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300 transition-colors">
+                                                <i class="fa-solid fa-bolt text-xs"></i>
+                                            </button>
+                                            <button onclick="ExpensesModule.openBankModal('other')" class="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div class="flex justify-between items-end">
                                         <div>
@@ -1236,8 +1266,17 @@ window.ExpensesModule = {
         const bankId = data.bankId;
 
         if (bankId) {
-            if (data.type === 'expense') {
-                // Expense: Do NOT deduct from Balance immediately.
+            // Check if it's a Pix Debit
+            const isPix = document.getElementById('expense-form').dataset.isPix === 'true';
+
+            if (isPix && data.type === 'expense') {
+                // Pix Logic: Deduct immediately & Mark as Pix
+                Store.updateBankBalance(bankId, -amount, 'balance');
+                data.isPixDebit = true;
+                data.paymentMode = 'pix';
+                if (window.logToScreen) window.logToScreen(`Pix de R$ ${Store.formatCurrency(amount)} pago!`, 'success');
+            } else if (data.type === 'expense') {
+                // Regular Expense: Do NOT deduct from Balance immediately (Wait for payment)
             } else if (data.type === 'income') {
                 Store.updateBankBalance(bankId, amount, 'balance');
             } else if (data.type === 'investment') {
@@ -1539,6 +1578,66 @@ window.ExpensesModule = {
         alert(`Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalPaid)} `);
         this.closeCloseMonthModal();
         router.handleRoute();
+    },
+
+    // --- Pix Payment Features ---
+
+    openPixModal(bankId) {
+        const banks = Store.getBanks();
+        const bankName = Store.getBankDefinitions().find(b => b.id === bankId)?.name || 'Carteira';
+
+        // Reuse the expense modal but customize it
+        document.getElementById('modal-title').innerText = `Pagar com Pix (${bankName})`;
+        document.getElementById('modal-type-input').value = 'expense';
+        document.getElementById('modal-id-input').value = ''; // New expense
+        document.getElementById('modal-payment-mode').value = 'pix_debit'; // Special mode
+
+        const form = document.getElementById('expense-form');
+        form.reset();
+
+        // Reset dataset
+        form.dataset.isPix = 'true';
+
+        // Set date to today
+        const today = new Date().toISOString().split('T')[0];
+        const dateInput = form.querySelector('input[name="date"]');
+        if (dateInput) dateInput.value = today;
+
+        // Populate and lock bank
+        const bankSelect = form.bankId;
+        if (bankSelect) {
+            bankSelect.value = bankId;
+        }
+
+        // Populate Categories (ensure they are loaded)
+        const categorySelect = form.category;
+        if (categorySelect) {
+            const categories = Store.getCategories('expense');
+            categorySelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            categorySelect.value = 'Outros'; // Default
+        }
+
+        // Hide complex fields
+        const paymentModeContainer = document.getElementById('payment-mode-container');
+        const categoryTypeField = document.getElementById('category-type-field');
+        const incomeRecurringField = document.getElementById('income-recurring-field');
+        const investmentOperationField = document.getElementById('investment-operation-field');
+
+        if (paymentModeContainer) paymentModeContainer.classList.add('hidden');
+        if (categoryTypeField) categoryTypeField.classList.add('hidden'); // Hide simple type too? Maybe keep description
+        if (incomeRecurringField) incomeRecurringField.classList.add('hidden');
+        if (investmentOperationField) investmentOperationField.classList.add('hidden');
+
+        // Ensure "category" is visible
+
+        const modal = document.getElementById('expense-modal');
+        const content = document.getElementById('expense-modal-content');
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+        }, 10);
     },
 
     clearAll() {
