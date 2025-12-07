@@ -52,12 +52,12 @@ window.WalletModule = {
         return `
             <div class="space-y-6 animate-fade-in">
                 <!-- Header -->
-                <div class="flex justify-between items-center">
-                    <div>
+                <div class="flex justify-between items-center mb-4 md:mb-0">
+                    <div class="hidden md:block">
                         <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Carteira Simulada</h2>
                         <p class="text-gray-500 dark:text-gray-400">Gerencie suas operações simuladas no S&P 500</p>
                     </div>
-                    <div class="flex gap-3">
+                    <div class="hidden md:flex gap-3 w-full md:w-auto justify-end">
                         <button onclick="WalletModule.openSettings()" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Configurações">
                             <i class="fa-solid fa-gear"></i>
                         </button>
@@ -857,9 +857,26 @@ window.WalletModule = {
         } catch (error) {
             console.error('Error updating quotes:', error);
             alert('Erro ao atualizar cotações. Verifique sua chave API e conexão.');
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+        }
+    },
+
+    // Inject controls into mobile header
+    afterRender() {
+        const mobileActions = document.getElementById('mobile-header-actions');
+        if (mobileActions) {
+            mobileActions.innerHTML = `
+                <div class="flex items-center gap-1">
+                    <button onclick="WalletModule.openSettings()" class="w-8 h-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-colors">
+                        <i class="fa-solid fa-gear text-sm"></i>
+                    </button>
+                    <button onclick="WalletModule.updateQuotes()" class="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors">
+                        <i class="fa-solid fa-rotate text-sm"></i>
+                    </button>
+                    <button onclick="WalletModule.openAddModal()" class="w-8 h-8 flex items-center justify-center text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-full transition-colors">
+                        <i class="fa-solid fa-plus text-sm"></i>
+                    </button>
+                </div>
+            `;
         }
     }
 };

@@ -208,26 +208,84 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
         <!-- Mobile Header -->
+        <!-- Mobile Header -->
         <div
-            class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-zenox-surface border-b border-gray-200 dark:border-white/5 z-20">
-            <div class="flex items-center gap-3">
+            class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-zenox-surface border-b border-gray-200 dark:border-white/5 z-20 transition-all duration-300">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="toggleMobileMenu()">
                 <div
                     class="w-8 h-8 rounded-lg bg-gradient-to-br from-zenox-primary to-zenox-secondary flex items-center justify-center shadow-neon">
                     <i class="fa-solid fa-bolt text-white text-sm"></i>
                 </div>
-                <span class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">ZENOX</span>
+                <span id="mobile-page-title"
+                    class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">ZENOX</span>
             </div>
-            <button onclick="toggleMobileMenu()"
-                class="p-2 text-gray-600 dark:text-gray-400 hover:text-zenox-primary dark:hover:text-white transition-colors rounded-lg active:bg-gray-100 dark:active:bg-white/5">
-                <i class="fa-solid fa-bars text-xl"></i>
-            </button>
+
+            <!-- Dynamic Mobile Actions (Injected by Modules) -->
+            <div id="mobile-header-actions" class="flex items-center gap-2"></div>
         </div>
 
         <!-- Content Area -->
-        <div id="app-container" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+        <div id="app-container" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth pb-24 md:pb-8">
             <!-- Dynamic Content Loaded Here -->
         </div>
     </main>
+
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <nav
+        class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-gray-100 dark:border-white/10 z-40 pb-safe shadow-2xl">
+        <div class="flex justify-around items-center h-20 px-2">
+
+            <!-- 1. Finanças -->
+            <button onclick="router.navigate('expenses')" data-target="expenses"
+                class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
+                <div
+                    class="mb-1.5 p-2 rounded-2xl transition-all duration-300 group-[.active]:bg-zenox-warning/10 group-[.active]:scale-110">
+                    <i
+                        class="fa-solid fa-sack-dollar text-xl text-gray-400 group-[.active]:text-zenox-warning transition-colors duration-300"></i>
+                </div>
+                <span
+                    class="text-[10px] font-semibold text-gray-400 group-[.active]:text-zenox-warning transition-colors duration-300">Finanças</span>
+            </button>
+
+            <!-- 2. Trades -->
+            <button onclick="router.navigate('trades')" data-target="trades"
+                class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
+                <div
+                    class="mb-1.5 p-2 rounded-2xl transition-all duration-300 group-[.active]:bg-blue-500/10 group-[.active]:scale-110">
+                    <i
+                        class="fa-solid fa-chart-line text-xl text-gray-400 group-[.active]:text-blue-500 transition-colors duration-300"></i>
+                </div>
+                <span
+                    class="text-[10px] font-semibold text-gray-400 group-[.active]:text-blue-500 transition-colors duration-300">Trades</span>
+            </button>
+
+            <!-- 3. Carteira -->
+            <button onclick="router.navigate('wallet')" data-target="wallet"
+                class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
+                <div
+                    class="mb-1.5 p-2 rounded-2xl transition-all duration-300 group-[.active]:bg-emerald-500/10 group-[.active]:scale-110">
+                    <i
+                        class="fa-solid fa-briefcase text-xl text-gray-400 group-[.active]:text-emerald-500 transition-colors duration-300"></i>
+                </div>
+                <span
+                    class="text-[10px] font-semibold text-gray-400 group-[.active]:text-emerald-500 transition-colors duration-300">Carteira</span>
+            </button>
+
+            <!-- 4. Anotações -->
+            <button onclick="router.navigate('notes')" data-target="notes"
+                class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
+                <div
+                    class="mb-1.5 p-2 rounded-2xl transition-all duration-300 group-[.active]:bg-zenox-secondary/10 group-[.active]:scale-110">
+                    <i
+                        class="fa-solid fa-note-sticky text-xl text-gray-400 group-[.active]:text-zenox-secondary transition-colors duration-300"></i>
+                </div>
+                <span
+                    class="text-[10px] font-semibold text-gray-400 group-[.active]:text-zenox-secondary transition-colors duration-300">Notas</span>
+            </button>
+
+        </div>
+    </nav>
 
     <!-- Auth Modal -->
     <div id="auth-modal"

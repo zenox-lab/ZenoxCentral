@@ -11,7 +11,7 @@ window.TradesModule = {
         return `
             <div class="space-y-8 animate-fade-in">
                 <!-- Header -->
-                <div>
+                <div class="hidden md:block">
                     <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Dashboard de Trading</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Acompanhe suas operações e resultados</p>
                 </div>

@@ -85,21 +85,23 @@ window.NotesModule = {
 
         return `
             <div class="animate-fade-in h-full flex flex-col gap-6">
+            <div class="animate-fade-in h-full flex flex-col gap-6">
+                <!-- Header: Hidden title on mobile, optimized search row -->
                 <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
+                    <div class="hidden md:block">
                         <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Minhas Anotações</h2>
                         <p class="text-gray-500 dark:text-gray-400 text-sm">Organize suas tarefas por período</p>
                     </div>
-                    <div class="flex gap-3">
-                        <div class="relative">
+                    <div class="hidden md:flex gap-3 w-full md:w-auto">
+                        <div class="relative flex-1 md:flex-initial">
                             <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="text" 
                                 value="${this.state.searchQuery}"
                                 oninput="NotesModule.handleSearch(this.value)"
                                 placeholder="Buscar..." 
-                                class="pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zenox-surface border-none shadow-sm focus:ring-2 focus:ring-zenox-primary/20 text-sm w-64 transition-all">
+                                class="pl-10 pr-4 py-2.5 rounded-2xl bg-white dark:bg-zenox-surface border border-gray-100 dark:border-white/5 shadow-sm focus:ring-2 focus:ring-zenox-primary/20 text-sm w-full md:w-64 transition-all outline-none">
                         </div>
-                        <button onclick="NotesModule.openModal()" class="bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-opacity w-10 h-10 rounded-full flex items-center justify-center shadow-lg">
+                        <button onclick="NotesModule.openModal()" class="bg-black dark:bg-white text-white dark:text-black hover:opacity-80 transition-opacity w-10 h-10 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
@@ -589,5 +591,36 @@ window.NotesModule = {
 
     toggleChecklistItem(noteId, itemId) {
         // Not used in grid view directly, but could be useful
+    },
+
+    // Inject controls into mobile header
+    afterRender() {
+        const mobileActions = document.getElementById('mobile-header-actions');
+        if (mobileActions) {
+            mobileActions.innerHTML = `
+                <div class="flex items-center gap-2 flex-1 justify-end w-full">
+                    <div class="relative w-32 transition-all focus-within:w-48">
+                        <i class="fa-solid fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" 
+                            value="${this.state.searchQuery}"
+                            oninput="NotesModule.handleSearch(this.value)"
+                            placeholder="Buscar..." 
+                            class="pl-7 pr-2 py-1.5 rounded-lg bg-gray-100 dark:bg-white/10 border-none text-xs w-full outline-none text-gray-800 dark:text-white transition-all">
+                    </div>
+                    <button onclick="NotesModule.openModal()" class="w-7 h-7 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                </div>
+            `;
+
+            // Restore search focus if typing
+            const mobileInput = mobileActions.querySelector('input');
+            if (this.state.searchQuery && mobileInput) {
+                mobileInput.focus();
+                // Move cursor to end
+                const len = mobileInput.value.length;
+                mobileInput.setSelectionRange(len, len);
+            }
+        }
     }
 };

@@ -69,6 +69,30 @@ window.router = {
         }
 
         const container = document.getElementById('app-container');
+
+        // Dynamic Mobile Header Title
+        const mobileTitle = document.getElementById('mobile-page-title');
+        if (mobileTitle) {
+            const titles = {
+                'dashboard': 'ZENOX',
+                'trades': 'Trades',
+                'equity': 'Patrimônio',
+                'analysis': 'Análise',
+                'wallet': 'Carteira',
+                'strategies': 'Estratégias',
+                'checklist': 'Checklist',
+                'expenses': 'Finanças',
+                'habits': 'Hábitos',
+                'notes': 'Notas'
+            };
+            mobileTitle.textContent = titles[hash] || 'ZENOX';
+            mobileTitle.textContent = titles[hash] || 'ZENOX';
+        }
+
+        // Clear dynamic header actions
+        const mobileActions = document.getElementById('mobile-header-actions');
+        if (mobileActions) mobileActions.innerHTML = '';
+
         if (module) {
             try {
                 container.innerHTML = module.render();

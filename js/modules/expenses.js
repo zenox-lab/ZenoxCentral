@@ -382,8 +382,11 @@ window.ExpensesModule = {
 
         return `
             <div class="space-y-6 animate-fade-in" onclick="ExpensesModule.handleOutsideClick(event)">
+                <!-- Mobile Header Controls (Month/Year & Scope) -->
+
+
                 <!-- Header -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="hidden md:flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 hover:shadow-blue-600/40 hover:scale-105 transition-all group">
                             <i class="fa-solid fa-shield-halved text-xl group-hover:rotate-12 transition-transform"></i>
@@ -395,9 +398,7 @@ window.ExpensesModule = {
                     
                     <!-- Controls -->
                     <div class="flex items-center gap-4 relative">
-                        <button onclick="ExpensesModule.clearAll()" class="text-xs text-rose-500 hover:text-rose-600 font-medium underline">
-                            Limpar Tudo
-                        </button>
+
 
                         <!-- View Scope Toggle -->
                         <div class="flex bg-gray-100 dark:bg-white/5 rounded-lg p-1">
@@ -1965,6 +1966,29 @@ window.ExpensesModule = {
 
     afterRender() {
         this.renderCharts();
+
+        // Inject controls into mobile header
+        const mobileActions = document.getElementById('mobile-header-actions');
+        if (mobileActions) {
+            mobileActions.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <!-- View Scope -->
+                    <div class="flex bg-gray-100 dark:bg-white/5 rounded-lg p-0.5">
+                        <button onclick="ExpensesModule.setViewScope('month')" class="px-2 py-1 text-[10px] font-medium rounded transition-all ${this.state.viewScope === 'month' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 opacity-70'}">Mês</button>
+                        <button onclick="ExpensesModule.setViewScope('year')" class="px-2 py-1 text-[10px] font-medium rounded transition-all ${this.state.viewScope === 'year' ? 'bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 opacity-70'}">Ano</button>
+                    </div>
+                    <!-- Date Picker -->
+                    <div class="flex items-center bg-gray-100 dark:bg-white/5 rounded-lg p-0.5 border border-gray-200 dark:border-white/10">
+                        <button onclick="ExpensesModule.changeMonth(-1)" class="w-6 h-6 flex items-center justify-center text-gray-500 hover:bg-white rounded"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                        <div class="px-2 text-center cursor-pointer" onclick="ExpensesModule.toggleMonthPicker(event)">
+                            <span class="text-xs font-bold text-gray-800 dark:text-white">${this.getMonthName(this.state.currentMonth)}</span>
+                            <span class="text-[8px] text-gray-500 block leading-none">${this.state.currentYear}</span>
+                        </div>
+                        <button onclick="ExpensesModule.changeMonth(1)" class="w-6 h-6 flex items-center justify-center text-gray-500 hover:bg-white rounded"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                    </div>
+                </div>
+            `;
+        }
     }
 };
 
