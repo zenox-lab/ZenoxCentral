@@ -1453,65 +1453,112 @@ window.ExpensesModule = {
         const stats = this.calculateStats(expenses);
         const banks = Store.getBanks();
 
-        if (totalEl) totalEl.innerText = `R$ ${Store.formatCurrency(stats.expense)} `;
+        // Initialize State for this modal session
+        this.closeMonthState = {
+            mode: 'all', // 'all' or 'select'
+            selectedExpenses: [],
+            totalToPay: stats.expense
+        };
 
-        // Dynamically generate inputs for each bank balance and investment
-        if (sourcesContainer) {
-            sourcesContainer.innerHTML = `
+        if (totalEl) totalEl.innerText = `R$ ${Store.formatCurrency(stats.expense)}`;
+
+        // Inject Mode Toggle & List Container FIRST
+        const container = document.querySelector('#close-month-content .p-6.space-y-4');
+        if (container) {
+            // Remove existing injected elements if any to avoid duplication (though modal is usually static)
+            // Ideally, we should rebuild the innerHTML or have a dedicated container.
+            // For now, let's inject the toggle above the "payment-sources" section.
+
+            // Re-render the main structure to be safe and clean
+            container.innerHTML = `
+                <div class="bg-rose-50 dark:bg-rose-900/10 p-4 rounded-xl border border-rose-100 dark:border-rose-500/20 text-center">
+                    <p class="text-sm text-rose-600 dark:text-rose-400 mb-1">Total a Pagar</p>
+                    <h3 class="text-2xl font-bold text-rose-700 dark:text-rose-300" id="close-month-total">R$ ${Store.formatCurrency(stats.expense)}</h3>
+                </div>
+
+                <!-- Mode Toggle -->
+                <div class="flex bg-gray-100 dark:bg-white/5 rounded-lg p-1">
+                    <button onclick="ExpensesModule.toggleCloseMonthMode('all')" id="btn-mode-all" class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm">
+                        Pagar Tudo
+                    </button>
+                    <button onclick="ExpensesModule.toggleCloseMonthMode('select')" id="btn-mode-select" class="flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                        Selecionar Contas
+                    </button>
+                </div>
+
+                <!-- Expense List (Hidden by default) -->
+                <div id="closing-expense-list" class="hidden space-y-2 max-h-48 overflow-y-auto border border-gray-100 dark:border-white/5 rounded-xl p-2 bg-gray-50 dark:bg-black/20">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <div class="space-y-3">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Como você pagou?</p>
+                    <div id="payment-sources-container" class="space-y-3"></div>
+                </div>
+
+                <button onclick="ExpensesModule.confirmCloseMonth()" class="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20 transition-all mt-4">
+                    Confirmar Fechamento
+                </button>
+            `;
+        }
+
+        // Re-get element references after innerHTML replacement
+        const newSourcesContainer = document.getElementById('payment-sources-container');
+
+        // Render Payment Sources Inputs
+        if (newSourcesContainer) {
+            newSourcesContainer.innerHTML = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Balances -->
                 <div class="space-y-3">
-                    <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Usar Saldo em Conta</h4>
-                        ${Store.getBankDefinitions().map(bank => `
-                        <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">${bank.name} (Disp: R$ ${Store.formatCurrency(banks[bank.id]?.balance || 0)})</label>
-                            <input type="number" id="pay-balance-${bank.id}" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
-                        </div>
-                        `).join('')}
+                    <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Saldo em Conta</h4>
+                    ${Store.getBankDefinitions().map(bank => `
+                    <div>
+                        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">${bank.name} (R$ ${Store.formatCurrency(banks[bank.id]?.balance || 0)})</label>
+                        <input type="number" id="pay-balance-${bank.id}" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
                     </div>
+                    `).join('')}
+                </div>
 
-                    <!--Investments -->
-            <div class="space-y-3">
-                <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Resgatar Investimentos</h4>
-                ${Store.getBankDefinitions().map(bank => `
-                        <div>
-                            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">${bank.name} (Inv: R$ ${Store.formatCurrency(banks[bank.id]?.invested || 0)})</label>
-                            <input type="number" id="pay-invest-${bank.id}" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
-                        </div>
-                        `).join('')}
+                <!-- Investments -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-gray-700 dark:text-gray-300 text-sm border-b border-gray-200 dark:border-white/10 pb-1">Resgatar</h4>
+                    ${Store.getBankDefinitions().map(bank => `
+                    <div>
+                        <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">${bank.name} (R$ ${Store.formatCurrency(banks[bank.id]?.invested || 0)})</label>
+                        <input type="number" id="pay-invest-${bank.id}" step="0.01" placeholder="0,00" class="payment-input w-full px-3 py-2 text-sm rounded-lg bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 focus:border-blue-500 outline-none transition-all text-gray-800 dark:text-white">
+                    </div>
+                    `).join('')}
+                </div>
             </div>
-                </div >
             `;
 
-            // Add event listeners to update remaining total
-            const inputs = sourcesContainer.querySelectorAll('.payment-input');
-            const initialTotal = stats.expense;
-
+            // Re-attach input listeners
+            const inputs = newSourcesContainer.querySelectorAll('.payment-input');
             const updateTotal = () => {
                 let totalPaid = 0;
-                inputs.forEach(input => {
-                    totalPaid += parseFloat(input.value) || 0;
-                });
+                inputs.forEach(input => totalPaid += parseFloat(input.value) || 0);
 
-                const remaining = initialTotal - totalPaid;
-                const remainingFormatted = Store.formatCurrency(remaining > 0 ? remaining : 0);
+                // Use this.closeMonthState.totalToPay instead of fixed initialTotal
+                const currentTotal = this.closeMonthState.totalToPay;
+                const remaining = currentTotal - totalPaid;
+                const totalElNow = document.getElementById('close-month-total');
 
-                if (totalEl) {
-                    totalEl.innerText = `R$ ${remainingFormatted} `;
-                    // Optional: Change color if fully paid
+                if (totalElNow) {
+                    // Update Text only, don't change formatted Total to Pay, just show status
+                    // Actually, let's show "Restante: R$ X" if not paid fully
                     if (remaining <= 0.01) {
-                        totalEl.classList.remove('text-rose-700', 'dark:text-rose-300');
-                        totalEl.classList.add('text-emerald-600', 'dark:text-emerald-400');
-                        totalEl.innerText = "Total Pago!";
+                        totalElNow.innerHTML = `<span class="text-emerald-500 text-xl">Pago!</span>`;
                     } else {
-                        totalEl.classList.add('text-rose-700', 'dark:text-rose-300');
-                        totalEl.classList.remove('text-emerald-600', 'dark:text-emerald-400');
+                        totalElNow.innerHTML = `R$ ${Store.formatCurrency(currentTotal)} <span class="text-xs text-gray-400 block">Faltam: R$ ${Store.formatCurrency(remaining)}</span>`;
                     }
                 }
             };
-
             inputs.forEach(input => input.addEventListener('input', updateTotal));
         }
+
+        // Render Expense List logic
+        this.renderCloseMonthExpenses();
 
         modal.classList.remove('hidden');
         setTimeout(() => {
@@ -1519,6 +1566,106 @@ window.ExpensesModule = {
             content.classList.remove('scale-95');
             content.classList.add('scale-100');
         }, 10);
+    },
+
+    toggleCloseMonthMode(mode) {
+        this.closeMonthState.mode = mode;
+
+        // Update Buttons
+        const btnAll = document.getElementById('btn-mode-all');
+        const btnSelect = document.getElementById('btn-mode-select');
+        const listContainer = document.getElementById('closing-expense-list');
+
+        if (mode === 'all') {
+            btnAll.className = 'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm';
+            btnSelect.className = 'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
+            listContainer.classList.add('hidden');
+
+            // Reset total to full stats
+            const expenses = Store.getExpenses();
+            const stats = this.calculateStats(expenses);
+            this.closeMonthState.totalToPay = stats.expense;
+
+        } else {
+            btnSelect.className = 'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all bg-white dark:bg-zenox-surface text-gray-800 dark:text-white shadow-sm';
+            btnAll.className = 'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
+            listContainer.classList.remove('hidden');
+
+            // Recalculate based on selection (initially 0 or all?)
+            // Let's default to 0 selected to force user to choose
+            // OR default to ALL selected
+            this.updateSelectedTotal();
+        }
+
+        // Update Display
+        const totalEl = document.getElementById('close-month-total');
+        if (totalEl) totalEl.innerHTML = `R$ ${Store.formatCurrency(this.closeMonthState.totalToPay)}`;
+    },
+
+    renderCloseMonthExpenses() {
+        const container = document.getElementById('closing-expense-list');
+        if (!container) return;
+
+        const expenses = Store.getExpenses();
+        const currentMonth = this.state.currentMonth;
+        const currentYear = this.state.currentYear;
+
+        // Filter unpaid expenses for current view
+        const unpaid = expenses.filter(e => {
+            const d = new Date(e.date);
+            return d.getMonth() === currentMonth &&
+                d.getFullYear() === currentYear &&
+                e.type === 'expense' &&
+                !e.paid;
+        });
+
+        if (unpaid.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-400 text-xs py-2">Nenhuma conta em aberto.</p>';
+            return;
+        }
+
+        container.innerHTML = unpaid.map(e => `
+            <label class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" value="${e.id}" onchange="ExpensesModule.handleExpenseSelection(this)" class="w-4 h-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 transition-all">
+                    <div>
+                        <p class="text-sm font-medium text-gray-800 dark:text-white break-all line-clamp-1">${e.description}</p>
+                        <p class="text-[10px] text-gray-500">${new Date(e.date).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                </div>
+                <span class="text-sm font-bold text-rose-600 dark:text-rose-400">R$ ${Store.formatCurrency(e.amount)}</span>
+            </label>
+        `).join('');
+    },
+
+    handleExpenseSelection(checkbox) {
+        const id = checkbox.value;
+        if (checkbox.checked) {
+            this.closeMonthState.selectedExpenses.push(id);
+        } else {
+            this.closeMonthState.selectedExpenses = this.closeMonthState.selectedExpenses.filter(eid => eid !== id);
+        }
+        this.updateSelectedTotal();
+    },
+
+    updateSelectedTotal() {
+        const expenses = Store.getExpenses();
+        let total = 0;
+
+        if (this.closeMonthState.mode === 'all') {
+            // Should not happen via checkbox, but safe fallback
+            const stats = this.calculateStats(expenses);
+            total = stats.expense;
+        } else {
+            this.closeMonthState.selectedExpenses.forEach(id => {
+                const e = expenses.find(exp => exp.id === id);
+                if (e) total += parseFloat(e.amount);
+            });
+        }
+
+        this.closeMonthState.totalToPay = total;
+        const totalEl = document.getElementById('close-month-total');
+        if (totalEl) totalEl.innerHTML = `R$ ${Store.formatCurrency(total)}`;
     },
 
     closeCloseMonthModal() {
@@ -1535,12 +1682,27 @@ window.ExpensesModule = {
     },
 
     confirmCloseMonth() {
-        // 1. Process Balance Deductions & 2. Process Investment Deductions
+        // 0. Validate Payment
+        const currentTotalToPay = this.closeMonthState.totalToPay;
+
+        let totalInput = 0;
         const bankDefinitions = Store.getBankDefinitions();
 
         bankDefinitions.forEach(bank => {
-            const balanceAmount = parseFloat(document.getElementById(`pay - balance - ${bank.id} `)?.value) || 0;
-            const investAmount = parseFloat(document.getElementById(`pay - invest - ${bank.id} `)?.value) || 0;
+            totalInput += parseFloat(document.getElementById(`pay-balance-${bank.id}`)?.value) || 0;
+            totalInput += parseFloat(document.getElementById(`pay-invest-${bank.id}`)?.value) || 0;
+        });
+
+        if (totalInput < currentTotalToPay - 0.1) { // 0.1 tolerance
+            if (!confirm(`O valor informado (R$ ${Store.formatCurrency(totalInput)}) é MENOR que o total a pagar (R$ ${Store.formatCurrency(currentTotalToPay)}). Deseja prosseguir com pagamento parcial?`)) {
+                return;
+            }
+        }
+
+        // 1. Process Balance Deductions & 2. Process Investment Deductions
+        bankDefinitions.forEach(bank => {
+            const balanceAmount = parseFloat(document.getElementById(`pay-balance-${bank.id}`)?.value) || 0;
+            const investAmount = parseFloat(document.getElementById(`pay-invest-${bank.id}`)?.value) || 0;
 
             if (balanceAmount > 0) {
                 Store.updateBankBalance(bank.id, -balanceAmount, 'balance');
@@ -1552,7 +1714,7 @@ window.ExpensesModule = {
 
                 // Create withdrawal record
                 const withdrawal = {
-                    description: `Pagamento Fatura(${bank.name}) - ${this.getMonthName(this.state.currentMonth)} `,
+                    description: `Pagamento Fatura (${bank.name}) - ${this.getMonthName(this.state.currentMonth)}`,
                     amount: -Math.abs(investAmount), // Negative for withdrawal
                     type: 'investment',
                     date: new Date().toISOString().split('T')[0],
@@ -1568,15 +1730,34 @@ window.ExpensesModule = {
         const currentMonth = this.state.currentMonth;
         const currentYear = this.state.currentYear;
 
+        let paidCount = 0;
+
         expenses.forEach(e => {
             const d = new Date(e.date);
-            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear && e.type === 'expense' && !e.paid) {
-                e.paid = true;
-                Store.updateExpense(e);
+            const isMatch = d.getMonth() === currentMonth && d.getFullYear() === currentYear && e.type === 'expense' && !e.paid;
+
+            if (isMatch) {
+                let shouldPay = false;
+
+                if (this.closeMonthState.mode === 'all') {
+                    shouldPay = true;
+                } else if (this.closeMonthState.selectedExpenses.includes(e.id)) {
+                    shouldPay = true;
+                }
+
+                if (shouldPay) {
+                    e.paid = true;
+                    Store.updateExpense(e);
+                    paidCount++;
+                }
             }
         });
 
-        alert(`Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalPaid)} `);
+        const alertMsg = this.closeMonthState.mode === 'all'
+            ? `Mês fechado com sucesso!\nTotal Pago: R$ ${Store.formatCurrency(totalInput)}`
+            : `${paidCount} contas foram marcadas como pagas.\nTotal Pago: R$ ${Store.formatCurrency(totalInput)}`;
+
+        alert(alertMsg);
         this.closeCloseMonthModal();
         router.handleRoute();
     },
@@ -1871,7 +2052,23 @@ window.ExpensesModule = {
                             <div class="space-y-1">
                                 <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">Adicionar ao Saldo (+)</label>
                                 <input type="number" name="incrementBalance" step="0.01" placeholder="Ex: 200,00" class="w-full px-4 py-2.5 text-sm rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-500/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-gray-800 dark:text-white placeholder-emerald-700/30 dark:placeholder-emerald-500/30">
-                                <p class="text-[10px] text-gray-400 mt-1">Valor digitado aqui será SOMADO ao saldo atual.</p>
+                                <p class="text-[10px] text-gray-400 mt-1">Valor digitado aqui será SOMADO ao saldo selecionado abaixo.</p>
+                            </div>
+
+                            <!-- Destination Selector -->
+                            <div class="flex gap-2 p-1 bg-gray-100 dark:bg-white/5 rounded-xl">
+                                <label class="flex-1 cursor-pointer relative">
+                                    <input type="radio" name="destination" value="balance" class="peer sr-only" checked>
+                                    <div class="py-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400 rounded-lg peer-checked:bg-white dark:peer-checked:bg-zenox-surface peer-checked:text-emerald-600 dark:peer-checked:text-emerald-400 peer-checked:shadow-sm transition-all">
+                                        Conta
+                                    </div>
+                                </label>
+                                <label class="flex-1 cursor-pointer relative">
+                                    <input type="radio" name="destination" value="invested" class="peer sr-only">
+                                    <div class="py-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400 rounded-lg peer-checked:bg-white dark:peer-checked:bg-zenox-surface peer-checked:text-blue-600 dark:peer-checked:text-blue-400 peer-checked:shadow-sm transition-all">
+                                        Investimento
+                                    </div>
+                                </label>
                             </div>
 
                             <div class="space-y-1">
@@ -1932,11 +2129,16 @@ window.ExpensesModule = {
         const formData = new FormData(event.target);
         const bankId = formData.get('bankId');
         let balance = parseFloat(formData.get('balance'));
+        let invested = parseFloat(formData.get('invested'));
         const increment = parseFloat(formData.get('incrementBalance'));
-        const invested = parseFloat(formData.get('invested'));
+        const destination = formData.get('destination'); // 'balance' or 'invested'
 
         if (!isNaN(increment) && increment !== 0) {
-            balance += increment;
+            if (destination === 'invested') {
+                invested += increment;
+            } else {
+                balance += increment;
+            }
         }
 
         Store.setBankData(bankId, { balance, invested });
