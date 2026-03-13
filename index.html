@@ -6,24 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zenox Central</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
         rel="stylesheet">
 
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#09090b">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="assets/icon.svg">
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -56,13 +52,12 @@
         }
     </script>
 
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
     <script>
-        // Access Control Check
-        if (!sessionStorage.getItem('zenox_access_granted')) {
-            window.location.href = 'login.html';
-        }
+        // Access Control Check (DESATIVADO TEMPORARIAMENTE)
+        // if (!sessionStorage.getItem('zenox_access_granted')) {
+        //     window.location.href = 'login.html';
+        // }
 
         // Theme Initialization
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -80,15 +75,12 @@
 <body
     class="bg-gray-100 dark:bg-zenox-bg text-zinc-900 dark:text-gray-200 font-sans antialiased overflow-hidden h-screen flex transition-colors duration-300">
 
-    <!-- Sidebar Overlay (Mobile) -->
     <div id="sidebar-overlay" onclick="toggleMobileMenu()"
         class="fixed inset-0 bg-black/50 z-30 hidden md:hidden glass"></div>
 
-    <!-- Sidebar -->
     <aside id="sidebar"
         class="fixed md:static inset-y-0 left-0 w-72 bg-white dark:bg-zenox-surface border-r border-gray-200 dark:border-white/5 flex flex-col transition-transform duration-300 z-40 -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
 
-        <!-- Logo -->
         <div class="h-20 flex items-center px-8 border-b border-gray-200 dark:border-white/5">
             <div class="flex items-center gap-3">
                 <div
@@ -97,10 +89,8 @@
                 </div>
                 <span class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">ZENOX</span>
             </div>
-            <!-- Sync Status Indicator Removed -->
-        </div>
+            </div>
 
-        <!-- Navigation -->
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             <button onclick="router.navigate('dashboard'); toggleMobileMenu(false)"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group active"
@@ -109,7 +99,6 @@
                 <span class="text-sm font-medium">Dashboard</span>
             </button>
 
-            <!-- Trade Diary Group -->
             <div class="space-y-1">
                 <button onclick="toggleTradingMenu()" id="trading-menu-btn"
                     class="nav-item w-full flex items-center justify-between px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all group">
@@ -122,7 +111,6 @@
                         id="trading-chevron"></i>
                 </button>
 
-                <!-- Submenu -->
                 <div id="trading-submenu" class="hidden pl-4 space-y-1">
                     <button onclick="router.navigate('trades'); toggleMobileMenu(false)" data-target="trades"
                         class="nav-item w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-blue-500 dark:hover:text-white transition-all">
@@ -184,9 +172,7 @@
             </button>
         </nav>
 
-        <!-- Sidebar Footer -->
         <div class="p-4 border-t border-gray-200 dark:border-white/5 space-y-2">
-            <!-- Theme Toggle -->
             <button onclick="toggleTheme()"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
                 <i class="fa-regular fa-moon dark:hidden text-base w-5 text-center"></i>
@@ -194,7 +180,6 @@
                 <span class="text-sm font-medium">Alternar Tema</span>
             </button>
 
-            <!-- Auth Button -->
             <button onclick="AuthModule.handleAuthClick()"
                 class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-zenox-primary dark:hover:text-white transition-all group">
                 <i id="auth-btn-icon"
@@ -205,10 +190,7 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <!-- Mobile Header -->
-        <!-- Mobile Header -->
         <div
             class="md:hidden flex items-center justify-between p-4 bg-white dark:bg-zenox-surface border-b border-gray-200 dark:border-white/5 z-20 transition-all duration-300">
             <div class="flex items-center gap-3 cursor-pointer" onclick="toggleMobileMenu()">
@@ -220,23 +202,17 @@
                     class="font-bold text-lg tracking-tight text-gray-900 dark:text-white">ZENOX</span>
             </div>
 
-            <!-- Dynamic Mobile Actions (Injected by Modules) -->
             <div id="mobile-header-actions" class="flex items-center gap-2"></div>
         </div>
 
-        <!-- Content Area -->
         <div id="app-container" class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth pb-24 md:pb-8">
-            <!-- Dynamic Content Loaded Here -->
-        </div>
+            </div>
     </main>
 
-    <!-- Bottom Navigation Bar (Mobile) -->
-    <!-- Bottom Navigation Bar (Mobile) -->
     <nav
         class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-[#0c0c0e]/95 backdrop-blur-xl border-t border-gray-100 dark:border-white/10 z-40 pb-safe shadow-2xl">
         <div class="flex justify-around items-center h-20 px-2">
 
-            <!-- 1. Finanças -->
             <button onclick="router.navigate('expenses')" data-target="expenses"
                 class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
                 <div
@@ -248,7 +224,6 @@
                     class="text-[10px] font-semibold text-gray-400 group-[.active]:text-zenox-warning transition-colors duration-300">Finanças</span>
             </button>
 
-            <!-- 2. Trades -->
             <button onclick="router.navigate('trades')" data-target="trades"
                 class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
                 <div
@@ -260,7 +235,6 @@
                     class="text-[10px] font-semibold text-gray-400 group-[.active]:text-blue-500 transition-colors duration-300">Trades</span>
             </button>
 
-            <!-- 3. Carteira -->
             <button onclick="router.navigate('wallet')" data-target="wallet"
                 class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
                 <div
@@ -272,7 +246,6 @@
                     class="text-[10px] font-semibold text-gray-400 group-[.active]:text-emerald-500 transition-colors duration-300">Carteira</span>
             </button>
 
-            <!-- 4. Anotações -->
             <button onclick="router.navigate('notes')" data-target="notes"
                 class="mobile-nav-item flex flex-col items-center justify-center w-full h-full group">
                 <div
@@ -287,22 +260,17 @@
         </div>
     </nav>
 
-    <!-- Auth Modal -->
     <div id="auth-modal"
         class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300">
         <div id="auth-modal-content"
             class="bg-white dark:bg-zenox-surface w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 transform scale-95 transition-transform duration-300 overflow-hidden">
-            <!-- Content injected by AuthModule -->
-        </div>
+            </div>
     </div>
 
-    <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Config & Scripts -->
     <script src="js/supabase-config.js?v=1.2"></script>
     <script src="js/store.js?v=1.2"></script>
     <script src="js/modules/auth.js?v=1.2"></script>
@@ -319,7 +287,6 @@
     <script src="js/data/marketData.js?v=1.2"></script>
     <script src="js/app.js?v=1.2"></script>
 
-    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
